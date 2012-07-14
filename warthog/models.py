@@ -3,6 +3,7 @@ from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _
+from warthog.managers import ResourceManager
 
 
 class Template(models.Model):
@@ -156,10 +157,12 @@ class Resource(models.Model):
     created = models.DateTimeField(_('creation date'), auto_now_add=True)
     updated = models.DateTimeField(_('last modified'), auto_now=True)
 
+    objects = ResourceManager()
+
     class Meta:
         verbose_name = _('resource')
         verbose_name_plural = _('resources')
-        permissions = (('preview_resource', 'Can preview resources'), )
+        permissions = (('preview_resource', 'Can preview resource'), )
         ordering = ['order', 'title', ]
         unique_together = (('uri_path', 'published', ), )
 
@@ -167,9 +170,9 @@ class Resource(models.Model):
         return '%s [%s]' % (
             self.title, Resource.STATUS_EXPANDED[self.published_status][1])
 
-#    @models.permalink
-#    def get_absolute_url(self):
-#        return 'warthog.views.preview_resource', [str(self.pk)]
+    @models.permalink
+    def get_absolute_url(self):
+        return 'warthog-preview', [str(self.pk)]
 
     def clean(self):
         # Ensure dates are valid
