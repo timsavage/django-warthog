@@ -1,0 +1,16 @@
+syntax: glob
+
+# Unix cruft
+*~
+
+# Python cruft
+*.pyc
+
+# Project artifacts
+MANIFEST
+build*
+dist*
+*.egg-info
+.coverage
+docs/_build*
+.idea*

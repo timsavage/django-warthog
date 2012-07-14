@@ -1,0 +1,13 @@
+#changelist table tbody td,
+#changelist table tbody th { line-height: 16px; }
+
+.warthog-status-deleted,
+.warthog-status-unpublished,
+.warthog-status-expired,
+.warthog-status-scheduled,
+.warthog-status-live { display: inline-block; padding-left: 21px; background: url(img/warthog-sprite.png) no-repeat; line-height: 16px }
+.warthog-status-deleted { background-position: 0 0; }
+.warthog-status-unpublished { background-position: 0 -50px; }
+.warthog-status-expired { background-position: 0 -100px; }
+.warthog-status-scheduled { background-position: 0 -150px; }
+.warthog-status-live { background-position: 0 -200px; }
