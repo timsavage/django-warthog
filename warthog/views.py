@@ -1,7 +1,10 @@
 from django.http import HttpResponse, Http404
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404, redirect
+from django.template import Template
 from django.utils.log import getLogger
+from django.utils.safestring import mark_safe
 from django.views.generic import View
+from warthog.context import CmsRequestContext
 from warthog.models import Resource
 
 
@@ -31,13 +34,25 @@ class CMS(View):
         Name of a permission that gives a user the ability to view all pages
         including those which have not been published or are outside the
         published date range. **Default:** ``preview_resource``
-    #``language``
-    #    Override that forces all pages to be in a particular language.
+
+    .. note::
+        This view is also used by :ref:CMSMiddleware to handle page requests.
 
     """
+    def load_resource(self, *args, **kwargs):
+        """
+        Load the actual resource.
+
+        """
+        try:
+            return Resource.objects.get_uri_path(self.request.path_info)
+        except Resource.DoesNotExist:
+            raise Http404
+
     def can_serve(self, resource):
         """
         Determine if this resource can be served.
+
         """
         if resource.is_live:
             return True
@@ -55,25 +70,50 @@ class CMS(View):
     def render(self, resource):
         """
         Handle rendering of the resource.
-        """
-        return HttpResponse(resource.content, content_type=resource.mime_type)
 
-    def load_resource(self, *args, **kwargs):
         """
-        Load the actual resource
-        """
-        try:
-            return Resource.objects.get_uri_path(self.request.path_info)
-        except Resource.DoesNotExist:
-            raise Http404
+        # Build up rendering context
+        context = CmsRequestContext(self.request, resource, {
+            'title': resource.title,
+            'long_title': resource.long_title,
+            'summary': resource.summary,
+            #                'tv': resource.template_vars,
+        })
+
+        # Render resource content
+        t = Template(resource.content)
+        resource_content = t.render(context)
+
+        template = resource.template
+        if template:
+            context.update({'content': mark_safe(resource_content)})
+
+            # Render final template
+            t = Template(template.content)
+            return t.render(context)
+        else:
+            return resource_content
 
     def get(self, request, *args, **kwargs):
+        """
+        Respond to ``get`` method.
+
+        """
         resource = self.load_resource(*args, **kwargs)
 
         if not self.can_serve(resource):
             raise Http404
 
-        return self.render(resource)
+        if resource.is_link:
+            return redirect(resource.content)
+        else:
+            content = self.render(resource)
+
+            response = HttpResponse(content, mimetype=resource.mime_type)
+            if resource.content_disposition:
+                response['Content-Disposition'] = resource.content_disposition + ";"
+            return response
+
 
 
 class CMSPreview(CMS):

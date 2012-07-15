@@ -110,49 +110,49 @@ class Resource(models.Model):
         STATUS_LIVE: ('live', _('Live'), _('This resource is live.')),
     }
 
-    # Description
     title = models.CharField(_('title'), max_length=100,
         help_text=_("The name/title of the resource. Avoid using backslashes in the name."))
-    long_title_raw = models.CharField(_('long title'), max_length=200, blank=True, null=True,
-        help_text=_("This is the long title of the resource."))
     uri_path = models.CharField(_('resource path'), max_length=500, db_index=True,
         help_text=_("Path used in URI to find this resource."))
-    description = models.CharField(_('description'), blank=True, max_length=250,
-        help_text=_("Optional; description of content."))
-    summary = models.TextField(_('summary'), blank=True,
-        help_text=_('Summary of resource content.'))
-    # Menus
     parent = models.ForeignKey('self', null=True, blank=True, related_name='children', on_delete=models.PROTECT)
-    order = models.PositiveIntegerField(_('Order'), default=100,
-        help_text=_('Ordering used to render element.'))
-    menu_title_raw = models.CharField(_('menu title'), max_length=100, blank=True,
-        help_text=_("Optional name of page to display in menu entries. If not supplied the title field is used."))
-    menu_class = models.CharField(_('menu CSS class'), max_length=50, blank=True,
-        help_text=_("Value to set template variable menuClass, to apply to menu items."))
-    hide_from_menu = models.BooleanField(_('hide from menu'), default=False,
-        help_text=_("Do not display this page in generated menus."))
-    # Options
-    cacheable = models.BooleanField(_('cacheable'), default=True,
-        help_text=_("Is the generated content cacheable."))
     published = models.BooleanField(_('published'), default=False,
         help_text=_("The resource is published."))
     publish_date = models.DateTimeField(_('go live date'), null=True, blank=True,
         help_text=_("Optional; if date is set this resource will go live once this date is reached."))
     unpublish_date = models.DateTimeField(_('expiry date'), null=True, blank=True,
         help_text=_("Optional; if date is set this resource will expire once this date has passed."))
-    deleted = models.BooleanField(_('deleted'), default=False,
-        help_text=_("The resource should be treated as deleted and not displayed to the public at any time."))
     # Content
     resource_type = models.CharField(_('resource type'), max_length=10, choices=RESOURCE_TYPES, default='content')
-    content = models.TextField(_('content'), null=True, blank=True)
-    # Content options
     template = models.ForeignKey(Template, blank=True, null=True,
         help_text=_("Template to use when rendering content."))
+    summary = models.TextField(_('summary'), blank=True,
+        help_text=_('Summary of resource content.'))
+    content = models.TextField(_('content'), null=True, blank=True)
+    # Content Extended
+    long_title_raw = models.CharField(_('long title'), max_length=200, blank=True, null=True,
+        help_text=_("This is the long title of the resource."))
+    description = models.CharField(_('description'), blank=True, max_length=250,
+        help_text=_("Optional; description of content."))
+    # Menu
+    menu_title_raw = models.CharField(_('menu title'), max_length=100, blank=True,
+        help_text=_("Optional name of page to display in menu entries. If not supplied the title field is used."))
+    menu_class = models.CharField(_('menu CSS class'), max_length=50, blank=True,
+        help_text=_("Value to set template variable menuClass, to apply to menu items."))
+    hide_from_menu = models.BooleanField(_('hide from menu'), default=False,
+        help_text=_("Do not display this page in generated menus."))
+    # Advanced
     mime_type = models.CharField(_('MIME type'), choices=MIME_TYPES, default='text/html', max_length=25,
         help_text=_("Mime-type to be set for this resource."))
     content_disposition = models.CharField(_('content disposition'), choices=CONTENT_DISPOSITIONS, blank=True, max_length=15,
         help_text=_("Optional; disposition of content."))
-    # Tracking
+    cacheable = models.BooleanField(_('cacheable'), default=True,
+        help_text=_("Is the generated content cacheable."))
+    # Flags
+    order = models.PositiveIntegerField(_('Order'), default=100,
+        help_text=_('Ordering used to render element.'))
+    deleted = models.BooleanField(_('deleted'), default=False,
+        help_text=_("The resource should be treated as deleted and not displayed to the public at any time."))
+    # Details
     created_by = models.ForeignKey(User, related_name='cms_resources')
     created = models.DateTimeField(_('creation date'), auto_now_add=True)
     updated = models.DateTimeField(_('last modified'), auto_now=True)
