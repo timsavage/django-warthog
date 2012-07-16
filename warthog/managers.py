@@ -23,12 +23,18 @@ class ResourceManager(models.Manager):
 #            return resource
 
         # Query item
-        resource = self.get(uri_path__exact=uri_path)
+        resource = self.select_related('resource_variables').get(uri_path__exact=uri_path, published=True, deleted=False)
 
         # Cache item if one is found
 #        if resource:
 #            item_key = resource.cache_key
 #            cache.add(item_key, resource, CACHE_DURATION)
 #            cache.add(reference_key, item_key, CACHE_DURATION)
+
+        return resource
+
+    def get_id(self, id):
+        # Query item
+        resource = self.select_related('resource_variables').get(id=id, published=True, deleted=False)
 
         return resource

@@ -77,7 +77,7 @@ class CMS(View):
             'title': resource.title,
             'long_title': resource.long_title,
             'summary': resource.summary,
-            #                'tv': resource.template_vars,
+            'tv': resource.template_vars,
         })
 
         # Render resource content

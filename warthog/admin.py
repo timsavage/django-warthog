@@ -1,8 +1,7 @@
 from django.contrib import admin
 from django import forms
 from django.forms.models import ModelForm
-
-from warthog.models import Template, ContentBlock, Resource
+from warthog.models import Template, TemplateVariable, ContentBlock, Resource, ResourceTemplateVariable
 
 
 # Try to load TINY MCE
@@ -14,6 +13,10 @@ HtmlWidget = forms.Textarea
 #        HtmlWidget = AdminTinyMCE
 #    except ImportError:
 #        pass
+
+class TemplateVariableInline(admin.TabularInline):
+    model = TemplateVariable
+    extra = 1
 
 
 class TemplateAdminForm(ModelForm):
@@ -33,9 +36,6 @@ class TemplateAdmin(admin.ModelAdmin):
         (None, {
             'fields': ('name', 'description', 'cacheable', ) ,
             }),
-#            ('Template variables', {
-#                'fields': ('template_variables', ),
-#            }),
         ('Content', {
             'fields': ('content', ),
             'classes': ('wide', 'monospace', ),
@@ -47,6 +47,7 @@ class TemplateAdmin(admin.ModelAdmin):
     list_display = ('name', 'description', 'created', 'updated', )
     list_display_links = ('name', )
     readonly_fields = ('created', 'updated', )
+    inlines = [TemplateVariableInline]
 admin.site.register(Template, TemplateAdmin)
 
 
@@ -79,6 +80,11 @@ class ContentBlockAdmin(admin.ModelAdmin):
     list_display_links = ('name', )
     readonly_fields = ('created', 'updated', )
 admin.site.register(ContentBlock, ContentBlockAdmin)
+
+
+class ResourceTemplateVariableInline(admin.TabularInline):
+    model = ResourceTemplateVariable
+    extra = 1
 
 
 class ResourceAdminForm(ModelForm):
@@ -119,11 +125,11 @@ class ResourceAdmin(admin.ModelAdmin):
     list_display_links = ('title', 'uri_path', )
     list_editable = ('published', )
     list_filter = ('published', 'deleted', )
-    #ordering = ('parent', 'order', 'uri_path', )
     prepopulated_fields = {'uri_path': ('title', )}
     readonly_fields = ('created_by', 'created', 'updated', )
     save_on_top = True
     save_as = True
+    inlines = [ResourceTemplateVariableInline]
 
     def save_model(self, request, obj, form, change):
         if not obj.created_by_id:
@@ -131,6 +137,4 @@ class ResourceAdmin(admin.ModelAdmin):
         if not obj.uri_path.startswith('/'):
             obj.uri_path = '/' + obj.uri_path
         obj.save()
-
-
 admin.site.register(Resource, ResourceAdmin)

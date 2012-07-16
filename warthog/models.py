@@ -4,25 +4,26 @@ from django.db import models
 from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _
 from warthog.managers import ResourceManager
+from warthog.templatevars import get_field_choices
 
 
 class Template(models.Model):
-    """
-    Defines a template.
+    """Defines a template.
 
     A template is used as the scaffolding for a page (or section of a page).
 
     Variables can be used within a template to define additional data items
     to be used when rendering the page.
+
     """
     # Description
     name = models.CharField(_('name'), db_index=True, unique=True, max_length=100)
     description = models.CharField(_('description'), blank=True, max_length=250,
         help_text=_("Optional description of template."))
-    # Options
-    cacheable = models.BooleanField(_('cachable'), default=True)
     # Content
     content = models.TextField(_('content'))
+    # Options
+    cacheable = models.BooleanField(_('cachable'), default=True)
     # Tracking
     created = models.DateTimeField(_('creation date'), auto_now_add=True)
     updated = models.DateTimeField(_('last modified'), auto_now=True)
@@ -36,19 +37,34 @@ class Template(models.Model):
         return self.name
 
 
+class TemplateVariable(models.Model):
+    """Variable that is defined for use within a template."""
+    template = models.ForeignKey(Template, related_name='variables')
+    name = models.CharField(_('name'), db_index=True, max_length=100)
+    # Field settings
+    field_type = models.CharField(_('field_type'), max_length=50, choices=get_field_choices())
+    required = models.BooleanField(_('required'))
+    label = models.CharField(_('label'), max_length=200, null=True, blank=True)
+    help_text = models.CharField(_('help text'), max_length=500, null=True, blank=True)
+
+    class Meta:
+        unique_together = (('template', 'name'), )
+
+    def __unicode__(self):
+        return self.name
+
+
 class ContentBlock(models.Model):
-    """
-    Defines a content block.
-    """
+    """Defines a content block."""
     # Description
     name = models.CharField(_('name'), db_index=True, unique=True, max_length=100)
     description = models.CharField(_('description'), blank=True, max_length=250,
         help_text=_("Optional description of content block."))
+    # Content
+    content = models.TextField(_('content'), null=True, blank=True)
     # Options
     cacheable = models.BooleanField(_('cacheable'), default=False,
         help_text=_("Is the generated content cacheable."))
-    # Content
-    content = models.TextField(_('content'), null=True, blank=True)
     # Tracking
     created = models.DateTimeField(_('creation date'), auto_now_add=True)
     updated = models.DateTimeField(_('last modified'), auto_now=True)
@@ -63,9 +79,7 @@ class ContentBlock(models.Model):
 
 
 class Resource(models.Model):
-    """
-    CMS Resource model, resource that is served on a particular URI.
-    """
+    """CMS Resource model, resource that is served on a particular URI."""
 
     RESOURCE_TYPES = (
         ('content', _('Content')),
@@ -95,7 +109,7 @@ class Resource(models.Model):
         ('attachment', _('Attachment'))
     )
 
-    # Statuses of the resource
+    # Statuses of a resource
     STATUS_DELETED = 0
     STATUS_UNPUBLISHED = 1
     STATUS_EXPIRED = 2
@@ -114,7 +128,7 @@ class Resource(models.Model):
         help_text=_("The name/title of the resource. Avoid using backslashes in the name."))
     uri_path = models.CharField(_('resource path'), max_length=500, db_index=True,
         help_text=_("Path used in URI to find this resource."))
-    parent = models.ForeignKey('self', null=True, blank=True, related_name='children', on_delete=models.PROTECT)
+    parent = models.ForeignKey('self', null=True, blank=True, on_delete=models.PROTECT)
     published = models.BooleanField(_('published'), default=False,
         help_text=_("The resource is published."))
     publish_date = models.DateTimeField(_('go live date'), null=True, blank=True,
@@ -182,10 +196,20 @@ class Resource(models.Model):
             raise ValidationError('Publish date must be prior to the Un-publish date.')
 
     @property
+    def template_vars(self):
+        t = getattr(self, '_template_vars', None)
+        if t is None:
+            t = dict([(v.name, v.value) for v in self.resource_variables.all()])
+            setattr(self, '_template_vars', t)
+        return t
+
+    @property
+    def children(self):
+        return self.resource_set.filter(deleted=False, published=True)
+
+    @property
     def published_status(self):
-        """
-        Determine publish status of this resource.
-        """
+        """Determine publish status of this resource."""
         if self.deleted:
             return self.STATUS_DELETED
         if self.published:
@@ -200,45 +224,70 @@ class Resource(models.Model):
 
     @property
     def is_live(self):
-        """
-        Is this model considered live.
-        """
+        """Is this model considered live."""
         return self.published_status == self.STATUS_LIVE
 
     @property
     def is_root(self):
-        """
-        Is this model at the root.
-        """
+        """Is this model at the root."""
         return not bool(self.parent)
 
     @property
     def is_link(self):
-        """
-        Is this model a link type.
-        """
+        """Is this model a link type."""
         return self.resource_type == 'link'
 
     @property
     def menu_title(self):
-        """
-        Title to appear in any menus (uses title if menu_title_raw is bool(False)).
+        """Title to appear in any menus (uses title if menu_title_raw is
+        bool(False)).
+
         """
         return self.menu_title_raw or self.title
 
     @property
     def long_title(self):
-        """
-        Long title (uses title if long_title_raw is bool(False)).
-        """
+        """Long title (uses title if long_title_raw is bool(False))."""
         return self.long_title_raw or self.title
 
     def html_status(self):
-        """
-        HTML representation of the status (primarily for use in Admin).
-        """
+        """HTML representation of the status (primarily for use in Admin)."""
         code, name, help_text = Resource.STATUS_EXPANDED[self.published_status]
         return '<span class="warthog-status-%s" title="%s">%s</span>' % (
             code, unicode(help_text), unicode(name))
     html_status.short_description = _('status')
     html_status.allow_tags = True
+
+
+class ResourceTemplateVariable(models.Model):
+    """Template variable that is applied to a resource."""
+    resource = models.ForeignKey(Resource, related_name='resource_variables')
+    template_variable = models.ForeignKey(TemplateVariable, null=True, blank=True)
+    name = models.CharField(max_length=50, null=True, blank=True)
+    value = models.TextField(blank=True, null=True)
+
+    class Meta:
+        unique_together = (('resource', 'name',), )
+
+    def __unicode__(self):
+        if self.template_variable:
+            return self.template_variable.name
+        else:
+            return self.name
+
+    def clean(self):
+        super(ResourceTemplateVariable, self).clean()
+        if not self.template_variable and not self.name:
+            raise ValidationError('Either a template variable or name must be specified.')
+
+    def save(self, force_insert=False, force_update=False, using=None):
+        # If a template variable is selected use it's name as the resource
+        # variables name (minor optimisation that helps with unique index).
+        if self.template_variable:
+            self.name = self.template_variable.name
+        return super(ResourceTemplateVariable, self).save(force_insert, force_update, using)
+
+    @property
+    def is_adhock(self):
+        """This variable is not related to a template_variable."""
+        return bool(self.template_variable)
