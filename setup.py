@@ -32,7 +32,7 @@ setup(
     platforms=['OS Independent'],
     classifiers=CLASSIFIERS,
     install_requires=[
-        'Django>=1.3',
+        'Django>=1.4',
         ],
     packages=[
         'warthog',

@@ -1,7 +1,7 @@
 import datetime
+from django import test
 from django.core.exceptions import ValidationError
 from django.utils import timezone
-from django.utils import unittest
 from warthog.models import Resource
 
 
@@ -24,7 +24,7 @@ PUBLISHED_STATUS = lambda t: t.published_status
 IS_LIVE = lambda t: t.is_live
 
 
-class ContentModelTestCase(unittest.TestCase):
+class ContentModelTestCase(test.TestCase):
     """
     Test cases for the content model.
     """
