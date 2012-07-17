@@ -1,14 +1,14 @@
 from django.http import Http404
-from warthog.views import CMS
+from warthog.views import Cms
 
 
 class CmsMiddleware(object):
     """
-    Middleware for capturing unhandled URI's and checks for matching content.
+    Middleware for capturing unhandled URI's and loading matching content.
 
     """
     def __init__(self):
-        self.view = CMS.as_view()
+        self.view = Cms.as_view()
 
     def process_response(self, request, response):
         """

@@ -11,17 +11,17 @@ from warthog.models import Resource
 logger = getLogger('warthog.views')
 
 
-class CMS(View):
+class Cms(View):
     """
     View for displaying CMS resources.
 
     **Example**::
 
         from django.conf.urls import *
-        from warthog.views import CMS
+        from warthog.views import Cms
 
         urlpatterns = patterns('',
-            url(r'^content/', CMS.as_view()),
+            url(r'^content/', Cms.as_view()),
         )
 
     The ``as_view`` method takes a several options:
@@ -116,17 +116,17 @@ class CMS(View):
 
 
 
-class CMSPreview(CMS):
+class CmsPreview(Cms):
     """
     View for previewing CMS resources.
 
     **Example**::
 
         from django.conf.urls import *
-        from warthog.views import CMSPreview
+        from warthog.views import CmsPreview
 
         urlpatterns = patterns('',
-            url(r'^preview/(\d+)/$', CMSPreview.as_view()),
+            url(r'^preview/(\d+)/$', CmsPreview.as_view()),
         )
 
     The ``as_view`` method takes a several options:
