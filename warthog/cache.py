@@ -13,7 +13,7 @@ def generate_obj_key(instance_or_type, **vary_by):
 def set_model(model_instance, cache=None):
     """Store a model in cache.
     
-    :param obj: the model object to store.
+    :param model_instance: the model object to store.
     :param cache: cache instance to use; defaults to main django cache.
     :returns: cache key.
     
@@ -36,7 +36,18 @@ def get_model(model_type, pk, cache=None):
     cache = cache or default_cache
     key = generate_obj_key(model_type, pk=pk)
     return cache.get(key)
-    
+
+def clear_model(model_instance, cache=None):
+    """Clear a model instance from cache.
+
+    :param model_instance: the model object to store.
+    :param cache: cache instance to use; defaults to main django cache.
+
+    """
+    cache = cache or default_cache
+    key = generate_obj_key(model_instance, pk=model_instance.pk)
+    return cache.delete(key)
+
 
 def set_model_by_attribute(model_instance, attr_name, cache=None):
     """Store a model in cache by attribute value.

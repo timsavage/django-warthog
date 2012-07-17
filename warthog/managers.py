@@ -1,4 +1,5 @@
 from django.db import models
+from warthog import cache
 
 
 class ResourceManager(models.Manager):
@@ -17,20 +18,16 @@ class ResourceManager(models.Manager):
             url = uri_path[:-1]
 
         # Try to get from cache
-#        reference_key = _cache_key(self.model, url, 'url_alias')
-#        resource = get_item_by_reference(reference_key)
-#        if resource:
-#            return resource
+        resource = cache.get_model_by_attribute(self.model, 'uri_path', uri_path)
+        if resource:
+            return resource
 
         # Query item
         resource = self.select_related('resource_variables').get(uri_path__exact=uri_path, published=True, deleted=False)
 
         # Cache item if one is found
-#        if resource:
-#            item_key = resource.cache_key
-#            cache.add(item_key, resource, CACHE_DURATION)
-#            cache.add(reference_key, item_key, CACHE_DURATION)
-
+        if resource:
+            cache.set_model_by_attribute(resource, 'uri_path')
         return resource
 
     def get_id(self, id):

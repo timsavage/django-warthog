@@ -1,6 +1,7 @@
 from django.contrib import admin
 from django import forms
 from django.forms.models import ModelForm
+from warthog import cache
 from warthog.models import Template, TemplateVariable, ContentBlock, Resource, ResourceTemplateVariable
 
 
@@ -13,6 +14,22 @@ HtmlWidget = forms.Textarea
 #        HtmlWidget = AdminTinyMCE
 #    except ImportError:
 #        pass
+
+
+class CachedModelAdmin(admin.ModelAdmin):
+    """Model admin class with built in cache clear actions"""
+    actions = 'clear_cache'
+
+    def clear_cache(self, request, queryset):
+        map(cache.clear_model, queryset)
+        count = len(queryset)
+        if count > 1:
+            message = '%s objects where'
+        else:
+            message = '1 object was'
+        self.message_user(request, "%s invalidated from cache." % message)
+    clear_cache.short_description = 'Invalidate selected objects in cache'
+
 
 class TemplateVariableInline(admin.TabularInline):
     model = TemplateVariable
@@ -95,7 +112,7 @@ class ResourceAdminForm(ModelForm):
             }
 
 
-class ResourceAdmin(admin.ModelAdmin):
+class ResourceAdmin(CachedModelAdmin):
     """
     Admin class for Resource model.
     """
