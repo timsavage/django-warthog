@@ -20,22 +20,8 @@ def content_block(context, block_name):
     return t.render(context)
 
 
-@register.assignment_tag(takes_context=True)
-def parent_resource(context, resource=None):
-    """Get parent resource of the current resource."""
-    resource = resource or context.resource
-    return resource.parent
-
-
-@register.assignment_tag(takes_context=True)
-def child_resources(context, resource=None):
-    """Get children of the current resource."""
-    resource = resource or context.resource
-    return resource.children.all()
-
-
 @register.assignment_tag
-def resource_by_id(pk):
+def get_resource(pk):
     """Get a resource from it's ID."""
     try:
         return Resource.objects.get_id(pk)
