@@ -128,7 +128,10 @@ class Resource(models.Model):
         help_text=_("The name/title of the resource. Avoid using backslashes in the name."))
     uri_path = models.CharField(_('resource path'), max_length=500, db_index=True,
         help_text=_("Path used in URI to find this resource."))
-    parent = models.ForeignKey('self', null=True, blank=True, on_delete=models.PROTECT)
+    long_title_raw = models.CharField(_('long title'), max_length=200, blank=True, null=True,
+        help_text=_("This is the long title of the resource."))
+    description = models.CharField(_('description'), blank=True, max_length=250,
+        help_text=_("Optional; description of content."))
     published = models.BooleanField(_('published'), default=False,
         help_text=_("The resource is published."))
     publish_date = models.DateTimeField(_('go live date'), null=True, blank=True,
@@ -142,12 +145,8 @@ class Resource(models.Model):
     summary = models.TextField(_('summary'), blank=True,
         help_text=_('Summary of resource content.'))
     content = models.TextField(_('content'), null=True, blank=True)
-    # Content Extended
-    long_title_raw = models.CharField(_('long title'), max_length=200, blank=True, null=True,
-        help_text=_("This is the long title of the resource."))
-    description = models.CharField(_('description'), blank=True, max_length=250,
-        help_text=_("Optional; description of content."))
     # Menu
+    parent = models.ForeignKey('self', null=True, blank=True, on_delete=models.PROTECT)
     menu_title_raw = models.CharField(_('menu title'), max_length=100, blank=True,
         help_text=_("Optional name of page to display in menu entries. If not supplied the title field is used."))
     menu_class = models.CharField(_('menu CSS class'), max_length=50, blank=True,
@@ -177,7 +176,7 @@ class Resource(models.Model):
         verbose_name = _('resource')
         verbose_name_plural = _('resources')
         permissions = (('preview_resource', 'Can preview resource'), )
-        ordering = ['order', 'title', ]
+        ordering = ['order', 'uri_path', 'title', ]
         unique_together = (('uri_path', 'published', ), )
 
     def __unicode__(self):
@@ -199,9 +198,12 @@ class Resource(models.Model):
     def template_vars(self):
         t = getattr(self, '_template_vars', None)
         if t is None:
-            t = dict([(v.name, v.value) for v in self.resource_variables.all()])
+            t = dict([(v.name, v.value) for v in self.resource_variables_set.all()])
             setattr(self, '_template_vars', t)
         return t
+
+    # Short cut for templates
+    tv = template_vars
 
     @property
     def children(self):
@@ -250,20 +252,12 @@ class Resource(models.Model):
         """Long title (uses title if long_title_raw is bool(False))."""
         return self.long_title_raw or self.title
 
-    def html_status(self):
-        """HTML representation of the status (primarily for use in Admin)."""
-        code, name, help_text = Resource.STATUS_EXPANDED[self.published_status]
-        return '<span class="warthog-status-%s" title="%s">%s</span>' % (
-            code, unicode(help_text), unicode(name))
-    html_status.short_description = _('status')
-    html_status.allow_tags = True
-
 
 class ResourceTemplateVariable(models.Model):
     """Template variable that is applied to a resource."""
-    resource = models.ForeignKey(Resource, related_name='resource_variables')
+    resource = models.ForeignKey(Resource, related_name='resource_variables_set')
     template_variable = models.ForeignKey(TemplateVariable, null=True, blank=True)
-    name = models.CharField(max_length=50, null=True, blank=True)
+    name = models.CharField(max_length=50, blank=True, editable=False)
     value = models.TextField(blank=True, null=True)
 
     class Meta:
