@@ -3,18 +3,7 @@ from django import forms
 from django.forms.models import ModelForm
 from django.utils.translation import ugettext_lazy as _
 from warthog import cache
-from warthog.models import Template, TemplateVariable, ContentBlock, Resource, ResourceTemplateVariable
-
-
-# Try to load TINY MCE
-HtmlWidget = forms.Textarea
-#if settings.CMS_USE_TINYMCE:
-#    try:
-#        #noinspection PyUnresolvedReferences
-#        from tinymce.widgets import AdminTinyMCE
-#        HtmlWidget = AdminTinyMCE
-#    except ImportError:
-#        pass
+from warthog.models import Template, ResourceType, ResourceTypeField, Resource, ResourceField
 
 
 class CachedModelAdmin(admin.ModelAdmin):
@@ -25,95 +14,61 @@ class CachedModelAdmin(admin.ModelAdmin):
         map(cache.clear_model, queryset)
         count = len(queryset)
         if count > 1:
-            message = '%s objects where'
+            message = '%s objects where' % count
         else:
             message = '1 object was'
         self.message_user(request, "%s invalidated from cache." % message)
     clear_cache.short_description = 'Invalidate selected objects in cache'
 
 
-class TemplateVariableInline(admin.TabularInline):
-    model = TemplateVariable
-    extra = 1
-
-
-class TemplateAdminForm(ModelForm):
-    class Meta:
-        model = Template
-        widgets = {
-            'content': HtmlWidget(attrs={'cols': 80, 'rows': 30}),
-            }
-
-
 class TemplateAdmin(admin.ModelAdmin):
     """
     Admin class for Template model.
     """
-    form = TemplateAdminForm
     fieldsets = [
         (None, {
             'fields': ('name', 'description', 'cacheable', ) ,
-            }),
+        }),
         ('Content', {
-            'fields': ('content', ),
+            'fields': ('mime_type', 'content', ),
             'classes': ('wide', 'monospace', ),
-            }),
+        }),
         ('Details', {
             'fields': ('created', 'updated', ),
-            }),
-        ]
+        }),
+    ]
     list_display = ('name', 'description', 'created', 'updated', )
     list_display_links = ('name', )
     readonly_fields = ('created', 'updated', )
-    inlines = [TemplateVariableInline]
     save_on_top = True
     save_as = True
 admin.site.register(Template, TemplateAdmin)
 
 
-class ContentBlockAdminForm(ModelForm):
-    class Meta:
-        model = ContentBlock
-        widgets = {
-            'content': HtmlWidget(attrs={'cols': 80, 'rows': 30}),
-            }
-
-
-class ContentBlockAdmin(admin.ModelAdmin):
-    """
-    Admin class for Content model.
-    """
-    form = ContentBlockAdminForm
-    fieldsets = [
-        (None, {
-            'fields': ('name', 'description', 'cacheable', ),
-            }),
-        ('Content', {
-            'fields': ('content', ),
-            'classes': ('wide', ),
-            }),
-        ('Details', {
-            'fields': ('created', 'updated', ),
-            }),
-    ]
-    list_display = ('name', 'description', 'created', 'updated', )
-    list_display_links = ('name', )
-    readonly_fields = ('created', 'updated', )
-admin.site.register(ContentBlock, ContentBlockAdmin)
-
-
-class ResourceTemplateVariableInline(admin.TabularInline):
-    model = ResourceTemplateVariable
+class ResourceTypeFieldInline(admin.TabularInline):
+    model = ResourceTypeField
     extra = 1
 
+class ResourceTypeAdmin(admin.ModelAdmin):
+    inlines = (ResourceTypeFieldInline, )
+    list_display = ('name', 'description', 'created', 'updated', )
+    prepopulated_fields = {'code': ('name', )}
+    save_on_top = True
+    save_as = True
+
+admin.site.register(ResourceType, ResourceTypeAdmin)
+
+
+class ResourceFieldInline(admin.TabularInline):
+    model = ResourceField
+    extra = 1
 
 class ResourceAdminForm(ModelForm):
     class Meta:
         model = Resource
         widgets = {
-            'content': HtmlWidget(attrs={'cols': 80, 'rows': 30}),
-            }
-
+            'content': forms.Textarea(attrs={'cols': 80, 'rows': 30}),
+        }
 
 class ResourceAdmin(CachedModelAdmin):
     """
@@ -122,31 +77,24 @@ class ResourceAdmin(CachedModelAdmin):
     form = ResourceAdminForm
     fieldsets = [
         (None, {
-            'fields': ('title', 'long_title_raw', 'uri_path', 'description', 'published', ('publish_date', 'unpublish_date'), ),
-            }),
-        ('Content', {
-            'fields': ('resource_type', 'template', 'summary', 'content', ),
-            'classes': ('wide', ),
-            }),
+            'fields': ('type', 'title', 'uri_path', 'published', ('publish_date', 'unpublish_date'), ),
+        }),
         ('Menu', {
             'fields': ('parent', 'menu_title_raw', 'menu_class', 'hide_from_menu', ),
-            }),
-        ('Advanced', {
-            'fields': ( 'mime_type', 'content_disposition', 'cacheable', ),
-            }),
+        }),
         ('Details', {
-            'fields': ('created_by', 'created', 'updated',),
-            }),
+            'fields': ('created', 'updated',),
+        }),
     ]
     list_display = ('html_status', 'title', 'uri_path', 'html_type', 'published', 'publish_summary', 'unpublish_summary', )
     list_display_links = ('title', 'uri_path', )
     list_filter = ('published', 'deleted', )
-    actions = ('make_published', 'make_unpublished', )
+    actions = ('make_published', 'make_unpublished', 'clear_cache', )
     prepopulated_fields = {'uri_path': ('title', )}
-    readonly_fields = ('created_by', 'created', 'updated', )
+    readonly_fields = ('created', 'updated', )
     save_on_top = True
     save_as = True
-    inlines = [ResourceTemplateVariableInline]
+    inlines = [ResourceFieldInline]
 
     def html_status(self, obj):
         """HTML representation of the status (primarily for use in Admin)."""
@@ -199,9 +147,8 @@ class ResourceAdmin(CachedModelAdmin):
     make_unpublished.short_description = _('Un-publish selected resources')
 
     def save_model(self, request, obj, form, change):
-        if not obj.created_by_id:
-            obj.created_by_id = request.user.id
         if not obj.uri_path.startswith('/'):
             obj.uri_path = '/' + obj.uri_path
         obj.save()
+
 admin.site.register(Resource, ResourceAdmin)

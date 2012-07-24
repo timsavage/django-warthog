@@ -1,8 +1,7 @@
 from django.http import HttpResponse, Http404
-from django.shortcuts import get_object_or_404, redirect
+from django.shortcuts import get_object_or_404
 from django.template import Template
 from django.utils.log import getLogger
-from django.utils.safestring import mark_safe
 from django.views.generic import View
 from warthog.context import CmsRequestContext
 from warthog.models import Resource
@@ -75,24 +74,11 @@ class Cms(View):
         # Build up rendering context
         context = CmsRequestContext(self.request, resource, {
             'title': resource.title,
-            'long_title': resource.long_title,
-            'summary': resource.summary,
-            'tv': resource.template_vars,
         })
 
-        # Render resource content
-        t = Template(resource.content)
-        resource_content = t.render(context)
-
-        template = resource.template
-        if template:
-            context.update({'content': mark_safe(resource_content)})
-
-            # Render final template
-            t = Template(template.content)
-            return t.render(context)
-        else:
-            return resource_content
+        template = resource.type.template
+        t = Template(template.content)
+        return HttpResponse(t.render(context), mimetype=template.mime_type)
 
     def get(self, request, *args, **kwargs):
         """
@@ -104,16 +90,7 @@ class Cms(View):
         if not self.can_serve(resource):
             raise Http404
 
-        if resource.is_link:
-            return redirect(resource.content)
-        else:
-            content = self.render(resource)
-
-            response = HttpResponse(content, mimetype=resource.mime_type)
-            if resource.content_disposition:
-                response['Content-Disposition'] = resource.content_disposition + ";"
-            return response
-
+        return self.render(resource)
 
 
 class CmsPreview(Cms):

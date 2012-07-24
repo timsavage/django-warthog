@@ -3,7 +3,7 @@ from django.forms import widgets
 
 
 DEFAULT_FIELD = (
-    'Character Field',
+    'Character field',
     fields.CharField,
     None
 )
@@ -18,22 +18,22 @@ __resource_fields = {
         widgets.Textarea
     ),
     'bool': (
-        'Boolean Field',
+        'Boolean field',
         fields.BooleanField,
         None,
     ),
     'date': (
-        'Date Field',
+        'Date field',
         fields.DateField,
         None,
     ),
     'datetime': (
-        'Date/Time Field',
+        'Date/Time field',
         fields.DateTimeField,
         None,
     ),
     'file': (
-        'File Field',
+        'File field',
         fields.FileField,
         None,
     )
@@ -108,3 +108,13 @@ def get_field_instance(code, field_kwargs=None, widget_kwargs=None):
     })
 
     return field(**field_kwargs)
+
+
+
+# Try to load TINY MCE
+try:
+    from tinymce.widgets import AdminTinyMCE
+except ImportError:
+    pass
+else:
+    register('html', 'HTML Field', fields.CharField, AdminTinyMCE)

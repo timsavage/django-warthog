@@ -1,10 +1,19 @@
-from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
+from django.core.validators import RegexValidator
 from django.db import models
 from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _
-from warthog.managers import ResourceManager
-from warthog.templatevars import get_field_choices
+from warthog.managers import CachingManager, ResourceManager, ResourceTypeManager
+from warthog import fields
+
+
+code_name = RegexValidator(r'^\w+$', message='Code value')
+
+class CodeField(models.CharField):
+    def __init__(self, *args, **kwargs):
+        kwargs.setdefault('max_length', 50)
+        kwargs.setdefault('validators', [code_name])
+        super(CodeField, self).__init__(*args, **kwargs)
 
 
 class Template(models.Model):
@@ -16,76 +25,6 @@ class Template(models.Model):
     to be used when rendering the page.
 
     """
-    # Description
-    name = models.CharField(_('name'), db_index=True, unique=True, max_length=100)
-    description = models.CharField(_('description'), blank=True, max_length=250,
-        help_text=_("Optional description of template."))
-    # Content
-    content = models.TextField(_('content'))
-    # Options
-    cacheable = models.BooleanField(_('cachable'), default=True)
-    # Tracking
-    created = models.DateTimeField(_('creation date'), auto_now_add=True)
-    updated = models.DateTimeField(_('last modified'), auto_now=True)
-
-    class Meta:
-        verbose_name = _('template')
-        verbose_name_plural = _('templates')
-        ordering = ['name', ]
-
-    def __unicode__(self):
-        return self.name
-
-
-class TemplateVariable(models.Model):
-    """Variable that is defined for use within a template."""
-    template = models.ForeignKey(Template, related_name='variables')
-    name = models.CharField(_('name'), db_index=True, max_length=100)
-    # Field settings
-    field_type = models.CharField(_('field_type'), max_length=50, choices=get_field_choices())
-    required = models.BooleanField(_('required'))
-    label = models.CharField(_('label'), max_length=200, null=True, blank=True)
-    help_text = models.CharField(_('help text'), max_length=500, null=True, blank=True)
-
-    class Meta:
-        unique_together = (('template', 'name'), )
-
-    def __unicode__(self):
-        return self.name
-
-
-class ContentBlock(models.Model):
-    """Defines a content block."""
-    # Description
-    name = models.CharField(_('name'), db_index=True, unique=True, max_length=100)
-    description = models.CharField(_('description'), blank=True, max_length=250,
-        help_text=_("Optional description of content block."))
-    # Content
-    content = models.TextField(_('content'), null=True, blank=True)
-    # Options
-    cacheable = models.BooleanField(_('cacheable'), default=False,
-        help_text=_("Is the generated content cacheable."))
-    # Tracking
-    created = models.DateTimeField(_('creation date'), auto_now_add=True)
-    updated = models.DateTimeField(_('last modified'), auto_now=True)
-
-    class Meta:
-        verbose_name = _('content block')
-        verbose_name_plural = _('content blocks')
-        ordering = ['name', ]
-
-    def __unicode__(self):
-        return self.name
-
-
-class Resource(models.Model):
-    """CMS Resource model, resource that is served on a particular URI."""
-
-    RESOURCE_TYPES = (
-        ('content', _('Content')),
-        ('link',    _('Link')),
-    )
-
     MIME_TYPES = (
         ('Text (text/*)', (
             ('text/html',          _('HTML')),
@@ -102,6 +41,89 @@ class Resource(models.Model):
             ('application/json',       _('JSON')),
         ))
     )
+
+    # Description
+    name = models.CharField(_('name'), max_length=100, db_index=True, unique=True)
+    description = models.CharField(_('description'), max_length=250, blank=True,
+        help_text=_("Optional description of template."))
+    # Content
+    content = models.TextField(_('content'))
+    mime_type = models.CharField(_('MIME type'), choices=MIME_TYPES, default='text/html',
+        max_length=25, help_text=_("Mime-type to be set for this template."))
+    # Options
+    cacheable = models.BooleanField(_('cachable'), default=True)
+    # Tracking
+    created = models.DateTimeField(_('creation date'), auto_now_add=True)
+    updated = models.DateTimeField(_('last modified'), auto_now=True)
+
+    class Meta:
+        verbose_name = _('template')
+        verbose_name_plural = _('templates')
+        ordering = ['name', ]
+
+    def __unicode__(self):
+        return self.name
+
+
+class ResourceType(models.Model):
+    """Defines a resource and what fields that are associated with it."""
+    name = models.CharField(_('name'), max_length=50, unique=True)
+    code = CodeField(_('code'), unique=True,
+        help_text=_('Code name used to reference this field.'))
+    description = models.CharField(_('description'), max_length=500, blank=True,
+        help_text=_('Optional description of this resource type.'))
+    template = models.ForeignKey(Template,
+        help_text=_('The default template used to render this resource type.'))
+    created = models.DateTimeField(_('creation date'), auto_now_add=True)
+    updated = models.DateTimeField(_('last modified'), auto_now=True)
+
+    objects = ResourceTypeManager()
+
+    class Meta:
+        verbose_name = _('resource type')
+        verbose_name_plural = _('resource types')
+
+    def __unicode__(self):
+        return self.name
+
+
+class ResourceTypeField(models.Model):
+    """Defines a field that is part of a resource."""
+    resource_type = models.ForeignKey(ResourceType, related_name='fields')
+    code = CodeField(_('code'), help_text=_('Code name used to reference this field.'))
+    field_type = models.CharField(_('field type'), max_length=25,
+        choices=fields.get_field_choices())
+    required = models.BooleanField(_('required'), default=False,
+        help_text=_('This field is required'))
+    label_raw = models.CharField(_('label'), max_length=200, null=True, blank=True,
+        help_text=_('Label displayed to user.'))
+    help_text = models.CharField(_('help text'), max_length=500, null=True, blank=True,
+        help_text=_('Optional help message for describing the use of the field.'))
+
+    objects = CachingManager()
+
+    class Meta:
+        verbose_name = _('resource type field')
+        verbose_name_plural = _('resource type fields')
+        unique_together = (('resource_type', 'code'), )
+
+    def __unicode__(self):
+        return self.code
+
+    @property
+    def label(self):
+        return self.label_raw if self.label_raw else self.code
+
+    def get_kwargs(self):
+        return {
+            'label': self.label,
+            'required': self.required,
+            'help_text': self.help_text,
+        }
+
+
+class Resource(models.Model):
+    """CMS Resource model, resource that is served on a particular URI."""
 
     CONTENT_DISPOSITIONS = (
         ('',           _('None')),
@@ -124,27 +146,17 @@ class Resource(models.Model):
         STATUS_LIVE: ('live', _('Live'), _('This resource is live.')),
     }
 
+    type = models.ForeignKey(ResourceType, related_name=_('resources'))
     title = models.CharField(_('title'), max_length=100,
         help_text=_("The name/title of the resource. Avoid using backslashes in the name."))
     uri_path = models.CharField(_('resource path'), max_length=500, db_index=True,
         help_text=_("Path used in URI to find this resource."))
-    long_title_raw = models.CharField(_('long title'), max_length=200, blank=True, null=True,
-        help_text=_("This is the long title of the resource."))
-    description = models.CharField(_('description'), blank=True, max_length=250,
-        help_text=_("Optional; description of content."))
     published = models.BooleanField(_('published'), default=False,
         help_text=_("The resource is published."))
     publish_date = models.DateTimeField(_('go live date'), null=True, blank=True,
         help_text=_("Optional; if date is set this resource will go live once this date is reached."))
     unpublish_date = models.DateTimeField(_('expiry date'), null=True, blank=True,
         help_text=_("Optional; if date is set this resource will expire once this date has passed."))
-    # Content
-    resource_type = models.CharField(_('resource type'), max_length=10, choices=RESOURCE_TYPES, default='content')
-    template = models.ForeignKey(Template, blank=True, null=True,
-        help_text=_("Template to use when rendering content."))
-    summary = models.TextField(_('summary'), blank=True,
-        help_text=_('Summary of resource content.'))
-    content = models.TextField(_('content'), null=True, blank=True)
     # Menu
     parent = models.ForeignKey('self', null=True, blank=True, on_delete=models.PROTECT)
     menu_title_raw = models.CharField(_('menu title'), max_length=100, blank=True,
@@ -153,20 +165,12 @@ class Resource(models.Model):
         help_text=_("Value to set template variable menuClass, to apply to menu items."))
     hide_from_menu = models.BooleanField(_('hide from menu'), default=False,
         help_text=_("Do not display this page in generated menus."))
-    # Advanced
-    mime_type = models.CharField(_('MIME type'), choices=MIME_TYPES, default='text/html', max_length=25,
-        help_text=_("Mime-type to be set for this resource."))
-    content_disposition = models.CharField(_('content disposition'), choices=CONTENT_DISPOSITIONS, blank=True, max_length=15,
-        help_text=_("Optional; disposition of content."))
-    cacheable = models.BooleanField(_('cacheable'), default=True,
-        help_text=_("Is the generated content cacheable."))
     # Flags
     order = models.PositiveIntegerField(_('Order'), default=100,
         help_text=_('Ordering used to render element.'))
     deleted = models.BooleanField(_('deleted'), default=False,
         help_text=_("The resource should be treated as deleted and not displayed to the public at any time."))
     # Details
-    created_by = models.ForeignKey(User, related_name='cms_resources')
     created = models.DateTimeField(_('creation date'), auto_now_add=True)
     updated = models.DateTimeField(_('last modified'), auto_now=True)
 
@@ -193,17 +197,6 @@ class Resource(models.Model):
            (self.unpublish_date is not None) and \
            (self.publish_date > self.unpublish_date):
             raise ValidationError('Publish date must be prior to the Un-publish date.')
-
-    @property
-    def template_vars(self):
-        t = getattr(self, '_template_vars', None)
-        if t is None:
-            t = dict([(v.name, v.value) for v in self.resource_variables_set.all()])
-            setattr(self, '_template_vars', t)
-        return t
-
-    # Short cut for templates
-    tv = template_vars
 
     @property
     def children(self):
@@ -235,53 +228,28 @@ class Resource(models.Model):
         return not bool(self.parent)
 
     @property
-    def is_link(self):
-        """Is this model a link type."""
-        return self.resource_type == 'link'
-
-    @property
     def menu_title(self):
         """Title to appear in any menus (uses title if menu_title_raw is
-        bool(False)).
-
-        """
+        bool(False))."""
         return self.menu_title_raw or self.title
 
-    @property
-    def long_title(self):
-        """Long title (uses title if long_title_raw is bool(False))."""
-        return self.long_title_raw or self.title
 
-
-class ResourceTemplateVariable(models.Model):
+class ResourceField(models.Model):
     """Template variable that is applied to a resource."""
-    resource = models.ForeignKey(Resource, related_name='resource_variables_set')
-    template_variable = models.ForeignKey(TemplateVariable, null=True, blank=True)
-    name = models.CharField(max_length=50, blank=True, editable=False)
+    resource = models.ForeignKey(Resource, related_name='fields')
+    type_field = models.ForeignKey(ResourceTypeField)
+    code = CodeField(_('code'), db_index=True, blank=True, editable=False)
     value = models.TextField(blank=True, null=True)
 
     class Meta:
-        unique_together = (('resource', 'name',), )
+        unique_together = (('resource', 'code',), )
 
     def __unicode__(self):
-        if self.template_variable:
-            return self.template_variable.name
+        if self.code:
+            return self.code
         else:
-            return self.name
-
-    def clean(self):
-        super(ResourceTemplateVariable, self).clean()
-        if not self.template_variable and not self.name:
-            raise ValidationError('Either a template variable or name must be specified.')
+            return self.type_field.code
 
     def save(self, force_insert=False, force_update=False, using=None):
-        # If a template variable is selected use it's name as the resource
-        # variables name (minor optimisation that helps with unique index).
-        if self.template_variable:
-            self.name = self.template_variable.name
-        return super(ResourceTemplateVariable, self).save(force_insert, force_update, using)
-
-    @property
-    def is_adhock(self):
-        """This variable is not related to a template_variable."""
-        return bool(self.template_variable)
+        self.code = self.type_field.code
+        return super(ResourceField, self).save(force_insert, force_update, using)
