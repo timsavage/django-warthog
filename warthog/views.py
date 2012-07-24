@@ -2,6 +2,7 @@ from django.http import HttpResponse, Http404
 from django.shortcuts import get_object_or_404
 from django.template import Template
 from django.utils.log import getLogger
+from django.utils.safestring import mark_safe
 from django.views.generic import View
 from warthog.context import CmsRequestContext
 from warthog.models import Resource
@@ -71,10 +72,12 @@ class Cms(View):
         Handle rendering of the resource.
 
         """
+
         # Build up rendering context
-        context = CmsRequestContext(self.request, resource, {
-            'title': resource.title,
-        })
+        params = dict([(r.code, mark_safe(r.value)) for r in resource.fields.all()])
+        params['title'] = resource.title
+
+        context = CmsRequestContext(self.request, resource, params)
 
         template = resource.type.template
         t = Template(template.content)
