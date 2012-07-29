@@ -36,8 +36,11 @@ setup(
         ],
     packages=[
         'warthog',
+        'warthog.templatetags',
+        'warthog.templatevars',
+        'warthog.tests',
         ],
     package_data={
-        'warthog': ['warthog/static/*'],
+        'warthog': ['warthog/static/*', 'warthog/fixtures/*'],
         },
 )
