@@ -62,8 +62,7 @@
         "fields":{
             "code":"content",
             "resource":1,
-            "value":"<p>Welcome to Warthog!</p>",
-            "type_field":1
+            "value":"<p>Welcome to Warthog!</p>"
         }
     }
 ]

@@ -1,5 +1,5 @@
 from django.http import HttpResponse, Http404
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404, render
 from django.template import Template
 from django.utils.log import getLogger
 from django.utils.safestring import mark_safe
@@ -12,8 +12,7 @@ logger = getLogger('warthog.views')
 
 
 class Cms(View):
-    """
-    View for displaying CMS resources.
+    """View for displaying CMS resources.
 
     **Example**::
 
@@ -40,20 +39,14 @@ class Cms(View):
 
     """
     def load_resource(self, *args, **kwargs):
-        """
-        Load the actual resource.
-
-        """
+        """Load the actual resource."""
         try:
             return Resource.objects.get_uri_path(self.request.path_info)
         except Resource.DoesNotExist:
             raise Http404
 
     def can_serve(self, resource):
-        """
-        Determine if this resource can be served.
-
-        """
+        """Determine if this resource can be served."""
         if resource.is_live:
             return True
 
@@ -68,10 +61,7 @@ class Cms(View):
         return False
 
     def render(self, resource):
-        """
-        Handle rendering of the resource.
-
-        """
+        """Handle rendering of the resource."""
 
         # Build up rendering context
         params = dict([(r.code, mark_safe(r.value)) for r in resource.fields.all()])
@@ -84,10 +74,7 @@ class Cms(View):
         return HttpResponse(t.render(context), mimetype=template.mime_type)
 
     def get(self, request, *args, **kwargs):
-        """
-        Respond to ``get`` method.
-
-        """
+        """Respond to ``get`` HTTP method."""
         resource = self.load_resource(*args, **kwargs)
 
         if not self.can_serve(resource):
@@ -97,8 +84,7 @@ class Cms(View):
 
 
 class CmsPreview(Cms):
-    """
-    View for previewing CMS resources.
+    """View for previewing CMS resources.
 
     **Example**::
 

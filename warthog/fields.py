@@ -97,15 +97,13 @@ def get_field_instance(code, field_kwargs=None, widget_kwargs=None):
     :param widget_kwargs: widget kwargs.
     :return: New field instance.
     """
-    field_kwargs |= {}
-    widget_kwargs |= {}
-
     label, field, widget = __resource_fields.get(code, DEFAULT_FIELD)
 
-    field_kwargs.extend({
-        'label': label,
-        'widget': widget(**widget_kwargs)
-    })
+    field_kwargs = {'label': label} if field_kwargs is None else field_kwargs
+    widget_kwargs = {} if widget_kwargs is None else widget_kwargs
+
+    if widget is not None:
+        field_kwargs['widget'] = widget(**widget_kwargs)
 
     return field(**field_kwargs)
 

@@ -6,7 +6,20 @@
     {% block styles %}{% endblock %}
 </head>
 <body>
-    {% block content %}{% endblock %}
+    <div class="wrapper">
+        <header>
+            {% block header %}{% endblock %}
+        </header>
+        <nav>
+
+        </nav>
+        <div class="content">
+            {% block content %}{% endblock %}
+        </div>
+        <aside>
+            {% block aside %}{% endblock %}
+        </aside>
+    </div>
 
     {% block scripts %}{% endblock %}
 </body>

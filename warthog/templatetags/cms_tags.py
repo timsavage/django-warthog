@@ -8,7 +8,7 @@ register = template.Library()
 def get_resource(pk):
     """Get a resource from it's ID."""
     try:
-        return Resource.objects.get_id(pk)
+        return Resource.objects.get(pk=pk)
     except Resource.DoesNotExist:
         return None
 

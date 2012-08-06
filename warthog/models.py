@@ -150,7 +150,7 @@ class Resource(models.Model):
     title = models.CharField(_('title'), max_length=100,
         help_text=_("The name/title of the resource. Avoid using backslashes in the name."))
     uri_path = models.CharField(_('resource path'), max_length=500, db_index=True,
-        help_text=_("Path used in URI to find this resource."))
+        help_text=_("Path used in URI to find this resource."), blank=True)
     published = models.BooleanField(_('published'), default=False,
         help_text=_("The resource is published."))
     publish_date = models.DateTimeField(_('go live date'), null=True, blank=True,
@@ -184,8 +184,8 @@ class Resource(models.Model):
         unique_together = (('uri_path', 'published', ), )
 
     def __unicode__(self):
-        return '%s [%s]' % (
-            self.title, Resource.STATUS_EXPANDED[self.published_status][1])
+        return '[%s] - %s (%s)' % (
+            self.title, Resource.STATUS_EXPANDED[self.published_status][1], self.uri_path)
 
     @models.permalink
     def get_absolute_url(self):
@@ -237,19 +237,11 @@ class Resource(models.Model):
 class ResourceField(models.Model):
     """Template variable that is applied to a resource."""
     resource = models.ForeignKey(Resource, related_name='fields')
-    type_field = models.ForeignKey(ResourceTypeField)
-    code = CodeField(_('code'), db_index=True, blank=True, editable=False)
+    code = CodeField()
     value = models.TextField(blank=True, null=True)
 
     class Meta:
         unique_together = (('resource', 'code',), )
 
     def __unicode__(self):
-        if self.code:
-            return self.code
-        else:
-            return self.type_field.code
-
-    def save(self, force_insert=False, force_update=False, using=None):
-        self.code = self.type_field.code
-        return super(ResourceField, self).save(force_insert, force_update, using)
+        return "%s=%s " % (self.code, self.value)
