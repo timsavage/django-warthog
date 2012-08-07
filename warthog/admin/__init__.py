@@ -1,5 +1,4 @@
 from django.contrib import admin
-from django import forms
 from django.contrib.admin.util import unquote
 from django.core.exceptions import PermissionDenied
 from django.core.urlresolvers import reverse
@@ -7,13 +6,12 @@ from django.db import transaction
 from django.forms.util import ErrorList
 from django.contrib.admin import helpers
 from django.http import Http404
-from django.shortcuts import render
 from django.utils.encoding import force_unicode
 from django.utils.html import escape
 from django.utils.translation import ugettext_lazy as _
 from warthog import cache
-from warthog.models import Template, ResourceType, ResourceTypeField, Resource, ResourceField
-from warthog.forms import ResourceForm, ResourceFieldsForm
+from warthog.models import Template, ResourceType, ResourceTypeField, Resource
+from warthog.admin.forms import ResourceFieldsForm, ResourceAddForm
 
 
 class CachedModelAdmin(admin.ModelAdmin):
@@ -52,6 +50,7 @@ class TemplateAdmin(admin.ModelAdmin):
     readonly_fields = ('created', 'updated', )
     save_on_top = True
     save_as = True
+
 admin.site.register(Template, TemplateAdmin)
 
 
@@ -86,21 +85,30 @@ class ResourceAdmin(CachedModelAdmin):
     """
     fieldsets = [
         (None, {
-            'fields': ('title', 'uri_path', 'published', ('publish_date', 'unpublish_date'), ),
-        }),
-        ('Menu', {
-            'fields': ('parent', 'menu_title_raw', 'menu_class', 'hide_from_menu', ),
+            'fields': ('title', 'uri_path', ('published', 'hide_from_menu') , ('publish_date', 'unpublish_date'), ),
         }),
         ('Details', {
-            'fields': ('created', 'updated',),
+            'fields': (('created', 'updated'),),
+        }),
+        ('Menu', {
+            'fields': ('parent', 'menu_title_raw', 'menu_class', ),
         }),
     ]
-    list_display = ('html_status', 'title', 'uri_path', 'html_type', 'published', 'publish_summary', 'unpublish_summary', )
+    add_fieldsets = [
+        (None, {
+            'fields': ('type', 'title', 'uri_path', 'parent', )
+        }),
+        ('Hidden', {
+            'classes': ('hidden',),
+            'fields': ('order', )
+        }),
+    ]
+    list_display = ('html_status', 'title', 'uri_path', 'html_type', 'published', 'publish_summary', 'unpublish_summary', 'html_actions', )
     list_display_links = ('title', 'uri_path', )
     list_filter = ('published', 'deleted', )
     actions = ('make_published', 'make_unpublished', 'clear_cache', )
     prepopulated_fields = {'uri_path': ('title', )}
-    readonly_fields = ('type', 'created', 'updated', )
+    readonly_fields = ('created', 'updated', )
     save_on_top = True
     save_as = True
 
@@ -112,11 +120,17 @@ class ResourceAdmin(CachedModelAdmin):
     html_status.short_description = _('status')
     html_status.allow_tags = True
 
+    def html_actions(self, obj):
+        """Actions within the list"""
+        return '<a href="%s?parent=%s">Add Child</a>' % (
+            reverse('admin:warthog_resource_add'), obj.pk)
+    html_actions.short_description = _('Actions')
+    html_actions.allow_tags = True
+
     def html_type(self, obj):
         """HTML representation of the status (primarily for use in Admin)."""
-        code, name, help_text = Resource.STATUS_EXPANDED[obj.published_status]
-        return '<span class="warthog-type warthog-type-%s">%s</span>' % (
-            obj.type, obj.get_resource_type_display())
+        return '<span title="%s">%s</span>' % (
+            obj.type.description, obj.type)
     html_type.short_description = _('type')
     html_type.allow_tags = True
 
@@ -159,97 +173,20 @@ class ResourceAdmin(CachedModelAdmin):
             obj.uri_path = '/' + obj.uri_path
         obj.save()
 
-    def get_urls(self):
-        from django.conf.urls import patterns, url
+    def get_fieldsets(self, request, obj=None):
+        if not obj:
+            return self.add_fieldsets
+        return super(ResourceAdmin, self).get_fieldsets(request, obj)
 
-        info = self.model._meta.app_label, self.model._meta.module_name
+    def get_form(self, request, obj=None, **kwargs):
+        if not obj:
+            return ResourceAddForm
+        return super(ResourceAdmin, self).get_form(request, obj, **kwargs)
 
-        urlpatterns = patterns('',
-            url(r'^$',
-                self.admin_site.admin_view(self.changelist_view),
-                name='%s_%s_changelist' % info),
-            url(r'^add/$',
-                self.admin_site.admin_view(self.select_type_view),
-                name='%s_%s_add' % info),
-            url(r'^add/([-\w]+)/$',
-                self.admin_site.admin_view(self.add_view),
-                name='%s_%s_create' % info),
-            url(r'^(.+)/history/$',
-                self.admin_site.admin_view(self.history_view),
-                name='%s_%s_history' % info),
-            url(r'^(.+)/delete/$',
-                self.admin_site.admin_view(self.delete_view),
-                name='%s_%s_delete' % info),
-            url(r'^(.+)/$',
-                self.admin_site.admin_view(self.change_view),
-                name='%s_%s_change' % info),
-        )
-        return urlpatterns
-
-    def select_type_view(self, request):
-        opts = self.model._meta
-        resource_types = ResourceType.objects.all()
-        context = {
-            'title': _('Select resource type to add'),
-            'resource_types': resource_types,
-            'app_label': opts.app_label,
-            'opts': opts,
-            'has_change_permission': self.has_change_permission(request),
-        }
-        return render(request, "admin/warthog/resource/select_type.html", context)
-
-    @transaction.commit_on_success
-    def add_view(self, request, resource_type_code, form_url=''):
-        model = self.model
-        opts = model._meta
-
-        if not self.has_add_permission(request):
-            raise PermissionDenied
-
-        resource_type = ResourceType.objects.get(code=resource_type_code)
-
-        ModelForm = self.get_form(request)
-
-        if request.method == 'POST':
-            form = ModelForm(data=request.POST)
-            fields_form = ResourceFieldsForm(resource_type, prefix='fields', data=request.POST, files=request.FILES)
-
-            if form.is_valid() and fields_form.is_valid():
-                resource = self.save_form(request, form, change=False)
-                resource.type = resource_type
-                self.save_model(request, resource, form, False)
-
-                # Create resource fields
-                for code, value in fields_form.cleaned_data.items():
-                    resource.fields.create(
-                        code=code,
-                        value=value,
-                    )
-
-                self.log_addition(request, resource)
-                return self.response_add(request, resource)
-        else:
-            form = ModelForm(initial={'type': resource_type.pk})
-            fields_form = ResourceFieldsForm(resource_type, prefix='fields')
-
-        adminForm = helpers.AdminForm(form, list(self.get_fieldsets(request)),
-            self.get_prepopulated_fields(request),
-            self.get_readonly_fields(request),
-            model_admin=self)
-        media = self.media + adminForm.media + fields_form.media
-
-        context = {
-            'title': _('Add %s %s') % (force_unicode(resource_type.name), force_unicode(opts.verbose_name)),
-            'adminform': adminForm,
-            'fields_adminform': fields_form,
-            'is_popup': "_popup" in request.REQUEST,
-            'show_delete': False,
-            'media': media,
-            'inline_admin_formsets': [],
-            'errors': ResourceErrorList(form, fields_form),
-            'app_label': opts.app_label,
-            }
-        return self.render_change_form(request, context, form_url=form_url, add=True)
+    def response_add(self, request, obj, post_url_continue='../%s/'):
+        if '_addanother' not in request.POST and '_popup' not in request.POST:
+            request.POST['_continue'] = 1
+        return super(ResourceAdmin, self).response_add(request, obj, post_url_continue)
 
     @transaction.commit_on_success
     def change_view(self, request, object_id, form_url='', extra_context=None):
@@ -257,7 +194,6 @@ class ResourceAdmin(CachedModelAdmin):
         opts = model._meta
 
         obj = self.get_object(request, unquote(object_id))
-
         if not self.has_change_permission(request, obj):
             raise PermissionDenied
 
@@ -265,12 +201,12 @@ class ResourceAdmin(CachedModelAdmin):
             raise Http404(_('%(name)s object with primary key %(key)r does not exist.') % {
                 'name': force_unicode(opts.verbose_name), 'key': escape(object_id)})
 
-        if request.method == 'POST' and "_saveasnew" in request.POST:
-            return self.add_view(request, form_url=reverse('admin:%s_%s_create' %
-                                                           (opts.app_label, opts.module_name),
-                current_app=self.admin_site.name), resource_type_code=obj.type)
+#        if request.method == 'POST' and "_saveasnew" in request.POST:
+#            return self.add_view(request, form_url=reverse('admin:%s_%s_create' %
+#                                                           (opts.app_label, opts.module_name),
+#                current_app=self.admin_site.name), resource_type_code=obj.type)
 
-        ModelForm = self.get_form(request)
+        ModelForm = self.get_form(request, obj)
         if request.method == 'POST':
             form = ModelForm(data=request.POST, instance=obj)
             fields_form = ResourceFieldsForm(obj.type, prefix='fields', data=request.POST, files=request.FILES)
@@ -293,9 +229,9 @@ class ResourceAdmin(CachedModelAdmin):
             form = ModelForm(instance=obj)
             fields_form = ResourceFieldsForm(obj.type, initial=dict(obj.fields.all().values_list('code', 'value')), prefix='fields')
 
-        adminForm = helpers.AdminForm(form, list(self.get_fieldsets(request)),
-            self.get_prepopulated_fields(request),
-            self.get_readonly_fields(request),
+        adminForm = helpers.AdminForm(form, list(self.get_fieldsets(request, obj)),
+            self.get_prepopulated_fields(request, obj),
+            self.get_readonly_fields(request, obj),
             model_admin=self)
         media = self.media + adminForm.media + fields_form.media
 

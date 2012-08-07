@@ -5,6 +5,7 @@
         {% include "admin/includes/fieldset.html" %}
     {% endfor %}
 
+    {% if fields_adminform %}
     <fieldset class="module aligned">
         <h2>Fields</h2>
         <div class="description">Resource type definition fields.</div>
@@ -28,4 +29,5 @@
             </div>
         {% endfor %}
     </fieldset>
+    {% endif %}
 {% endblock %}

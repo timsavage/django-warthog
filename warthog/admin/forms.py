@@ -1,4 +1,5 @@
 from django import forms
+from warthog.models import Resource
 from warthog import fields
 
 
@@ -9,3 +10,10 @@ class ResourceFieldsForm(forms.Form):
 
         for field in  self.resource_type.fields.all():
             self.fields[field.code] = fields.get_field_instance(field.field_type, field.get_kwargs())
+
+
+class ResourceAddForm(forms.ModelForm):
+    class Meta:
+        model = Resource
+        fields = ('type', 'title', 'uri_path', 'parent', 'order')
+

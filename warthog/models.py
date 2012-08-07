@@ -163,7 +163,7 @@ class Resource(models.Model):
         help_text=_("Optional name of page to display in menu entries. If not supplied the title field is used."))
     menu_class = models.CharField(_('menu CSS class'), max_length=50, blank=True,
         help_text=_("Value to set template variable menuClass, to apply to menu items."))
-    hide_from_menu = models.BooleanField(_('hide from menu'), default=False,
+    hide_from_menu = models.BooleanField(_('hide from navigation'), default=False,
         help_text=_("Do not display this page in generated menus."))
     # Flags
     order = models.PositiveIntegerField(_('Order'), default=100,
