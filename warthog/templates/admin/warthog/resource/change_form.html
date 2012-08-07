@@ -7,8 +7,7 @@
 
     {% if fields_adminform %}
     <fieldset class="module aligned">
-        <h2>Fields</h2>
-        <div class="description">Resource type definition fields.</div>
+        <h2>Resource fields</h2>
         {% for field in fields_adminform %}
             <div class="form-row{% if fields_adminform.fields|length_is:'1' and fields_adminform.errors %} errors{% endif %} field-{{ field.name }}">
                 <div>

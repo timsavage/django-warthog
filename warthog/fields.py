@@ -1,6 +1,6 @@
 from django.forms import fields
 from django.forms import widgets
-
+from django.contrib.admin import widgets as admin_widgets
 
 DEFAULT_FIELD = (
     'Character field',
@@ -15,27 +15,27 @@ __resource_fields = {
     'text': (
         'Text area',
         fields.CharField,
-        widgets.Textarea
+        admin_widgets.AdminTextareaWidget
     ),
     'bool': (
         'Boolean field',
         fields.BooleanField,
-        None,
+        None
     ),
     'date': (
         'Date field',
         fields.DateField,
-        None,
+        admin_widgets.AdminDateWidget,
     ),
     'datetime': (
         'Date/Time field',
         fields.DateTimeField,
-        None,
+        admin_widgets.AdminSplitDateTime,
     ),
     'file': (
         'File field',
         fields.FileField,
-        None,
+        admin_widgets.AdminFileWidget,
     )
 }
 

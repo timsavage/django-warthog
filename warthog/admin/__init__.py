@@ -1,6 +1,7 @@
 from django.contrib import admin
 from django.contrib.admin.util import unquote
 from django.core.exceptions import PermissionDenied
+from django.core.files.uploadedfile import UploadedFile
 from django.core.urlresolvers import reverse
 from django.db import transaction
 from django.forms.util import ErrorList
@@ -12,6 +13,7 @@ from django.utils.translation import ugettext_lazy as _
 from warthog import cache
 from warthog.models import Template, ResourceType, ResourceTypeField, Resource
 from warthog.admin.forms import ResourceFieldsForm, ResourceAddForm
+from warthog.admin import uploads
 
 
 class CachedModelAdmin(admin.ModelAdmin):
@@ -90,7 +92,8 @@ class ResourceAdmin(CachedModelAdmin):
         ('Details', {
             'fields': (('created', 'updated'),),
         }),
-        ('Menu', {
+        ('Advanced', {
+            'classes': ('collapsible',),
             'fields': ('parent', 'menu_title_raw', 'menu_class', ),
         }),
     ]
@@ -212,21 +215,30 @@ class ResourceAdmin(CachedModelAdmin):
             fields_form = ResourceFieldsForm(obj.type, prefix='fields', data=request.POST, files=request.FILES)
 
             if form.is_valid() and fields_form.is_valid():
-                resource = self.save_form(request, form, change=False)
-                self.save_model(request, resource, form, False)
+                obj = self.save_form(request, form, change=False)
+                self.save_model(request, obj, form, False)
 
                 # Update resource fields
-                resource.fields.all().delete()
+                obj.fields.all().delete()
                 for code, value in fields_form.cleaned_data.items():
-                    resource.fields.create(
-                        code=code,
-                        value=value,
-                    )
+                    if isinstance(value, UploadedFile):
+                        obj.fields.create(
+                            code=code,
+                            value=uploads.save_file('resource/%s/%s-%s' % (
+                                obj.pk, code, value.name), value),
+                        )
+                    else:
+                        obj.fields.create(
+                            code=code,
+                            value=value,
+                        )
 
-                self.log_addition(request, resource)
-                return self.response_add(request, resource)
+                self.log_addition(request, obj)
+                return self.response_change(request, obj)
         else:
             form = ModelForm(instance=obj)
+
+            # Populate form
             fields_form = ResourceFieldsForm(obj.type, initial=dict(obj.fields.all().values_list('code', 'value')), prefix='fields')
 
         adminForm = helpers.AdminForm(form, list(self.get_fieldsets(request, obj)),
