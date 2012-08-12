@@ -1,11 +1,12 @@
 from django import forms
+from django.core.files.uploadedfile import UploadedFile
 from warthog.models import Resource
 from warthog import fields
 from warthog.admin import uploads
 
 
 class ResourceFieldsForm(forms.Form):
-    def __init__(self, resource_type, *args, **kwargs):
+    def __init__(self, resource_type, instance=None, *args, **kwargs):
         self.resource_type = resource_type
         super(ResourceFieldsForm, self).__init__(*args, **kwargs)
 
@@ -16,6 +17,20 @@ class ResourceFieldsForm(forms.Form):
             if isinstance(field_instance, forms.FileField) and field.code in initial:
                 initial[field.code] = uploads.as_field_file(initial[field.code])
         self.initial = initial
+
+    def save_to(self, obj):
+        changed_data = self.changed_data
+        cleaned_data = self.cleaned_data
+        obj.fields.filter(code__in=changed_data).delete()
+        for code, value, field in [(code, cleaned_data[code], self.fields[code]) for code in changed_data]:
+            if isinstance(field, forms.FileField):
+                if value:
+                    obj.fields.create(code=code,
+                        value=uploads.save_file('resource/%s/%s-%s' % (
+                            obj.pk, code, value.name), value),
+                    )
+            else:
+                obj.fields.create(code=code, value=value)
 
 
 class ResourceAddForm(forms.ModelForm):

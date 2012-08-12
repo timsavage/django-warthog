@@ -1,7 +1,6 @@
 from django.contrib import admin
 from django.contrib.admin.util import unquote
 from django.core.exceptions import PermissionDenied
-from django.core.files.uploadedfile import UploadedFile
 from django.core.urlresolvers import reverse
 from django.db import transaction
 from django.forms.util import ErrorList
@@ -191,6 +190,13 @@ class ResourceAdmin(CachedModelAdmin):
             request.POST['_continue'] = 1
         return super(ResourceAdmin, self).response_add(request, obj, post_url_continue)
 
+    def save_fields_form(self, request, form, obj, change):
+        """
+        Given a ModelForm return an unsaved instance. ``change`` is True if
+        the object is being changed, and False if it's being added.
+        """
+        return form.save_to(obj)
+
     @transaction.commit_on_success
     def change_view(self, request, object_id, form_url='', extra_context=None):
         model = self.model
@@ -217,22 +223,7 @@ class ResourceAdmin(CachedModelAdmin):
             if form.is_valid() and fields_form.is_valid():
                 obj = self.save_form(request, form, change=False)
                 self.save_model(request, obj, form, False)
-
-                # Update resource fields
-                obj.fields.all().delete()
-                for code, value in fields_form.cleaned_data.items():
-                    if isinstance(value, UploadedFile):
-                        obj.fields.create(
-                            code=code,
-                            value=uploads.save_file('resource/%s/%s-%s' % (
-                                obj.pk, code, value.name), value),
-                        )
-                    else:
-                        obj.fields.create(
-                            code=code,
-                            value=value,
-                        )
-
+                self.save_fields_form(request, fields_form, obj, False)
                 self.log_addition(request, obj)
                 return self.response_change(request, obj)
         else:

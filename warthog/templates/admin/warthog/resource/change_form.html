@@ -1,31 +1,28 @@
 {% extends "admin/change_form.html" %}
 
-{% block field_sets %}
-    {% for fieldset in adminform %}
-        {% include "admin/includes/fieldset.html" %}
-    {% endfor %}
-
+{% block after_field_sets %}
     {% if fields_adminform %}
     <fieldset class="module aligned">
         <h2>Resource fields</h2>
         {% for field in fields_adminform %}
-            <div class="form-row{% if fields_adminform.fields|length_is:'1' and fields_adminform.errors %} errors{% endif %} field-{{ field.name }}">
-                <div>
-                    {% if field.is_checkbox %}
-                        {{ field }}{{ field.label_tag }}
-                    {% else %}
-                        {{ field.label_tag }}
-                        {% if field.is_readonly %}
-                            <p>{{ field.contents }}</p>
-                        {% else %}
-                            {{ field }}
-                        {% endif %}
-                    {% endif %}
-                    {% if field.help_text %}
-                        <p class="help">{{ field.help_text|safe }}</p>
-                    {% endif %}
-                </div>
+        <div class="form-row{% if field.errors %} errors{% endif %} field-{{ field.name }}">
+            <div>
+            {{ field.errors }}
+            {% if field.is_checkbox %}
+                {{ field }}{{ field.label_tag }}
+            {% else %}
+                {{ field.label_tag }}
+                {% if field.is_readonly %}
+                    <p>{{ field.contents }}</p>
+                {% else %}
+                    {{ field }}
+                {% endif %}
+            {% endif %}
+            {% if field.help_text %}
+                <p class="help">{{ field.help_text|safe }}</p>
+            {% endif %}
             </div>
+        </div>
         {% endfor %}
     </fieldset>
     {% endif %}
