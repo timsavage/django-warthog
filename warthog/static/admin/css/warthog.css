@@ -1,6 +1,8 @@
 #changelist table tbody td,
 #changelist table tbody th { line-height: 16px; }
 
+fieldset.hidden { display: none; }
+
 .warthog-status, .warthog-type { display: inline-block; padding-left: 21px; background: url(img/warthog-sprite.png) no-repeat; line-height: 16px }
 
 /* Types */

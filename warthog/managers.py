@@ -100,7 +100,7 @@ class ResourceManager(CachingManager):
         """
         # Normalise path
         if len(uri_path) > 1 and uri_path.endswith('/'):
-            url = uri_path[:-1]
+            uri_path = uri_path[:-1]
 
         # Try to get from cache
         ref_key = generate_cache_key(self.model, uri_path=uri_path)

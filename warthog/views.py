@@ -1,6 +1,6 @@
 from django.http import HttpResponse, Http404
 from django.shortcuts import get_object_or_404, render
-from django.template import Template
+from django.template import Template, loader
 from django.utils.log import getLogger
 from django.utils.safestring import mark_safe
 from django.views.generic import View
@@ -69,9 +69,8 @@ class Cms(View):
 
         context = CmsRequestContext(self.request, resource, params)
 
-        template = resource.type.template
-        t = Template(template.content)
-        return HttpResponse(t.render(context), mimetype=template.mime_type)
+        template = loader.get_template(resource.type.default_template)
+        return HttpResponse(template.render(context))#, mimetype=template.mime_type)
 
     def get(self, request, *args, **kwargs):
         """Respond to ``get`` HTTP method."""

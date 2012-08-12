@@ -36,6 +36,11 @@ __resource_fields = {
         'File field',
         fields.FileField,
         admin_widgets.AdminFileWidget,
+    ),
+    'image': (
+        'Image field',
+        fields.ImageField,
+        admin_widgets.AdminFileWidget,
     )
 }
 

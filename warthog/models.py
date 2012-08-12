@@ -9,12 +9,6 @@ from warthog import fields
 
 code_name = RegexValidator(r'^\w+$', message='Code value')
 
-class CodeField(models.CharField):
-    def __init__(self, *args, **kwargs):
-        kwargs.setdefault('max_length', 50)
-        kwargs.setdefault('validators', [code_name])
-        super(CodeField, self).__init__(*args, **kwargs)
-
 
 class Template(models.Model):
     """Defines a template.
@@ -67,13 +61,32 @@ class Template(models.Model):
 
 class ResourceType(models.Model):
     """Defines a resource and what fields that are associated with it."""
+    MIME_TYPES = (
+        ('Text (text/*)', (
+            ('text/html',          _('HTML')),
+            ('text/plain',         _('Text')),
+            ('text/css',           _('CSS')),
+            ('text/javascript',    _('JavaScript')),
+            ('text/csv',           _('CSV')),
+            ('text/xml',           _('XML')),
+            ('text/cachemanifest', _('HTML5 Cache Manifest')),
+            )),
+        ('Application (application/*)', (
+            ('application/xhtml+xml',  _('XHTML')),
+            ('application/javascript', _('JavaScript')),
+            ('application/json',       _('JSON')),
+            ))
+        )
+
     name = models.CharField(_('name'), max_length=50, unique=True)
-    code = CodeField(_('code'), unique=True,
+    code = models.CharField(_('code'), max_length=50, unique=True, validators=[code_name],
         help_text=_('Code name used to reference this field.'))
     description = models.CharField(_('description'), max_length=500, blank=True,
         help_text=_('Optional description of this resource type.'))
-    template = models.ForeignKey(Template,
-        help_text=_('The default template used to render this resource type.'))
+    default_template = models.CharField(_('default template'), max_length=500,
+        help_text=_('Name of the default template used to render resources of this type.'))
+#    child_types = models.ManyToManyField('self', null=True, blank=True, related_name='child_types',
+#        help_text=_('This type can be a child of these types. No types indicates this type can be used anywhere.'))
     created = models.DateTimeField(_('creation date'), auto_now_add=True)
     updated = models.DateTimeField(_('last modified'), auto_now=True)
 
@@ -90,7 +103,8 @@ class ResourceType(models.Model):
 class ResourceTypeField(models.Model):
     """Defines a field that is part of a resource."""
     resource_type = models.ForeignKey(ResourceType, related_name='fields')
-    code = CodeField(_('code'), help_text=_('Code name used to reference this field.'))
+    code = models.CharField(_('code'), max_length=50, validators=[code_name],
+        help_text=_('Code name used to reference this field.'))
     field_type = models.CharField(_('field type'), max_length=25,
         choices=fields.get_field_choices())
     required = models.BooleanField(_('required'), default=False,
@@ -237,7 +251,8 @@ class Resource(models.Model):
 class ResourceField(models.Model):
     """Template variable that is applied to a resource."""
     resource = models.ForeignKey(Resource, related_name='fields')
-    code = CodeField()
+    code = models.CharField(_('code'), max_length=50, validators=[code_name],
+        help_text=_('Code name used to reference this field.'))
     value = models.TextField(blank=True, null=True)
 
     class Meta:
