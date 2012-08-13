@@ -36,6 +36,8 @@ setup(
         ],
     packages=[
         'warthog',
+        'warthog.admin',
+        'warthog.migrations',
         'warthog.templatetags',
         'warthog.templatevars',
         'warthog.tests',
