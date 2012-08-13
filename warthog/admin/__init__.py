@@ -124,8 +124,13 @@ class ResourceAdmin(CachedModelAdmin):
 
     def html_actions(self, obj):
         """Actions within the list"""
-        return '<a href="%s?parent=%s">Add resource</a>' % (
-            reverse('admin:warthog_resource_add'), obj.pk)
+        child_types = obj.type.child_types.all()
+        add_uri = reverse('admin:warthog_resource_add')
+        actions = []
+        for type in child_types:
+            actions.append('<li><a href="%s?parent=%s&type=%s">Add %s resource</a></li>' % (
+                add_uri, obj.pk, type.pk, type.name))
+        return '<ul>%s</ul>' % ''.join(actions)
     html_actions.short_description = _('Actions')
     html_actions.allow_tags = True
 

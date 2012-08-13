@@ -1,5 +1,4 @@
 from django import forms
-from django.core.files.uploadedfile import UploadedFile
 from warthog.models import Resource
 from warthog import fields
 from warthog.admin import uploads
@@ -37,4 +36,6 @@ class ResourceAddForm(forms.ModelForm):
     class Meta:
         model = Resource
         fields = ('type', 'title', 'uri_path', 'parent', 'order')
+        readonly = ('parent', )
+
 
