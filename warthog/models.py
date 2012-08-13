@@ -60,24 +60,9 @@ class Template(models.Model):
 
 
 class ResourceType(models.Model):
-    """Defines a resource and what fields that are associated with it."""
-    MIME_TYPES = (
-        ('Text (text/*)', (
-            ('text/html',          _('HTML')),
-            ('text/plain',         _('Text')),
-            ('text/css',           _('CSS')),
-            ('text/javascript',    _('JavaScript')),
-            ('text/csv',           _('CSV')),
-            ('text/xml',           _('XML')),
-            ('text/cachemanifest', _('HTML5 Cache Manifest')),
-            )),
-        ('Application (application/*)', (
-            ('application/xhtml+xml',  _('XHTML')),
-            ('application/javascript', _('JavaScript')),
-            ('application/json',       _('JSON')),
-            ))
-        )
-
+    """
+    Defines a resource and what fields that are associated with it.
+    """
     name = models.CharField(_('name'), max_length=50, unique=True)
     code = models.CharField(_('code'), max_length=50, unique=True, validators=[code_name],
         help_text=_('Code name used to reference this field.'))
@@ -85,8 +70,8 @@ class ResourceType(models.Model):
         help_text=_('Optional description of this resource type.'))
     default_template = models.CharField(_('default template'), max_length=500,
         help_text=_('Name of the default template used to render resources of this type.'))
-#    child_types = models.ManyToManyField('self', null=True, blank=True, related_name='child_types',
-#        help_text=_('This type can be a child of these types. No types indicates this type can be used anywhere.'))
+    child_types = models.ManyToManyField('self', null=True, blank=True, related_name='child_types',
+        help_text=_('This type can be a child of these types. No types indicates this type can be used anywhere.'))
     created = models.DateTimeField(_('creation date'), auto_now_add=True)
     updated = models.DateTimeField(_('last modified'), auto_now=True)
 
@@ -137,7 +122,9 @@ class ResourceTypeField(models.Model):
 
 
 class Resource(models.Model):
-    """CMS Resource model, resource that is served on a particular URI."""
+    """
+    CMS Resource model, resource that is served on a particular URI.
+    """
 
     CONTENT_DISPOSITIONS = (
         ('',           _('None')),
