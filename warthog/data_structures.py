@@ -48,27 +48,36 @@ class ResourceIterator(object):
     Resource iterator for iterating over resource query sets
     """
     def __init__(self, queryset):
-        self.queryset = queryset
+        self.resources = [resource for resource in queryset if resource.is_live]
 
     @classmethod
-    def for_type(cls, resource_type):
+    def for_type(cls, resource_type, include_hidden=False):
         """
         Get a resource iterator for a particular resource type.
         :param resource_type: Resource type object.
         :return:
         """
-        return cls(Resource.objects.filter(type_id=resource_type.id))
+        queryset = Resource.objects.filter(type_id=resource_type.id)
+        if not include_hidden:
+            queryset = queryset.filter(hide_from_menu=False)
+        return cls(queryset)
 
     @classmethod
-    def for_children(cls, resource):
+    def for_children(cls, resource, include_hidden=False):
         """
         Get a resource iterator for child objects.
         :param cls:
         :param resource:
         :return:
         """
-        return cls(resource.children.all())
+        queryset = resource.children.all()
+        if not include_hidden:
+            queryset = queryset.filter(hide_from_menu=False)
+        return cls(queryset)
 
     def __iter__(self):
-        for resource in self.queryset:
+        for resource in self.resources:
             yield ResourceItem(resource)
+
+    def __len__(self):
+        return len(self.resources)

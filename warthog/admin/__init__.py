@@ -118,7 +118,7 @@ class ResourceAdmin(CachedModelAdmin):
         """HTML representation of the status (primarily for use in Admin)."""
         code, name, help_text = Resource.STATUS_EXPANDED[obj.published_status]
         return '<span class="warthog-status warthog-status-%s" title="%s">%s</span>' % (
-            code, unicode(help_text), unicode(name))
+            code, unicode(help_text), unicode(name) + (', hidden' if obj.hide_from_menu else ''))
     html_status.short_description = _('status')
     html_status.allow_tags = True
 
@@ -136,8 +136,7 @@ class ResourceAdmin(CachedModelAdmin):
 
     def html_type(self, obj):
         """HTML representation of the status (primarily for use in Admin)."""
-        return '<span title="%s">%s</span>' % (
-            obj.type.description, obj.type)
+        return '<span title="%s">%s</span>' % (obj.type.description, obj.type)
     html_type.short_description = _('type')
     html_type.allow_tags = True
 

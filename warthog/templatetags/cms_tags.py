@@ -15,11 +15,11 @@ def get_resource(pk):
 
 
 @register.assignment_tag
-def get_resource_type(code):
+def get_resource_type(code, include_hidden=False):
     resource_type = ResourceType.objects.get(code=code)
-    return ResourceIterator.for_type(resource_type)
+    return ResourceIterator.for_type(resource_type, include_hidden)
 
 
 @register.assignment_tag(takes_context=True)
-def get_children(context, resource=None):
-    return ResourceIterator.for_children(resource or context.resource)
+def get_children(context, resource=None, include_hidden=False):
+    return ResourceIterator.for_children(resource or context.resource, include_hidden)
