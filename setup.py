@@ -43,6 +43,12 @@ setup(
         'warthog.tests',
         ],
     package_data={
-        'warthog': ['warthog/static/*', 'warthog/fixtures/*'],
-        },
+        'warthog': [
+            'static/admin/css/warthog.css',
+            'static/admin/css/img/warthog-sprite.png',
+            'templates/admin/warthog/resource/*.html',
+            'templates/admin/warthog/*.html',
+            'templates/warthog/*.html',
+        ],
+    },
 )

@@ -93,7 +93,7 @@ class ResourceAdmin(CachedModelAdmin):
         }),
         ('Advanced', {
             'classes': ('collapsible',),
-            'fields': ('parent', 'menu_title_raw', 'menu_class', ),
+            'fields': ('parent', 'menu_title_raw', 'menu_class', 'order', ),
         }),
     ]
     add_fieldsets = [
@@ -107,7 +107,7 @@ class ResourceAdmin(CachedModelAdmin):
     ]
     list_display = ('html_status', 'title', 'uri_path', 'html_type', 'published', 'publish_summary', 'unpublish_summary', 'html_actions', )
     list_display_links = ('title', 'uri_path', )
-    list_filter = ('published', 'deleted', )
+    list_filter = ('published', 'deleted', 'type', )
     actions = ('make_published', 'make_unpublished', 'clear_cache', )
     prepopulated_fields = {'uri_path': ('title', )}
     readonly_fields = ('created', 'updated', )
