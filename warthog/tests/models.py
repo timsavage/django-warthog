@@ -88,13 +88,6 @@ class ContentModelTestCase(test.TestCase):
 
     ## Other property tests
 
-    def test_is_link(self):
-        target = Resource(resource_type='link')
-        self.assertTrue(target.is_link)
-
-        target = Resource(resource_type='content')
-        self.assertFalse(target.is_link)
-
     def test_is_root(self):
         target = Resource(parent=None)
         self.assertTrue(target.is_root)
@@ -109,13 +102,6 @@ class ContentModelTestCase(test.TestCase):
 
         target = Resource(title="Foo", menu_title_raw="Bar")
         self.assertEqual("Bar", target.menu_title)
-
-    def test_long_title(self):
-        target = Resource(title="Foo")
-        self.assertEqual("Foo", target.long_title)
-
-        target = Resource(title="Foo", long_title_raw="Bar")
-        self.assertEqual("Bar", target.long_title)
 
 
     ## Methods
