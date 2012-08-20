@@ -70,8 +70,8 @@ class ResourceType(models.Model):
         help_text=_('Optional description of this resource type.'))
     default_template = models.CharField(_('default template'), max_length=500,
         help_text=_('Name of the default template used to render resources of this type.'))
-    child_types = models.ManyToManyField('self', null=True, blank=True, related_name='child_types',
-        help_text=_('This type can be a child of these types. No types indicates this type can be used anywhere.'))
+    child_types = models.ManyToManyField('self', verbose_name=_('Child types'), symmetrical=False, blank=True,
+        help_text=_('Resource types that can be created as leaf nodes of the current resource.'))
     created = models.DateTimeField(_('creation date'), auto_now_add=True)
     updated = models.DateTimeField(_('last modified'), auto_now=True)
 
@@ -86,7 +86,9 @@ class ResourceType(models.Model):
 
 
 class ResourceTypeField(models.Model):
-    """Defines a field that is part of a resource."""
+    """
+    Defines a field that is part of a resource.
+    """
     resource_type = models.ForeignKey(ResourceType, related_name='fields')
     code = models.CharField(_('code'), max_length=50, validators=[code_name],
         help_text=_('Code name used to reference this field.'))
@@ -150,7 +152,9 @@ class Resource(models.Model):
     type = models.ForeignKey(ResourceType, related_name=_('resources'))
     title = models.CharField(_('title'), max_length=100,
         help_text=_("The name/title of the resource. Avoid using backslashes in the name."))
-    uri_path = models.CharField(_('resource path'), max_length=500, db_index=True,
+    slug = models.CharField(_('slug'), max_length=100, null=True,
+        help_text=_('Resource identifier used to create URI path.'))
+    uri_path = models.CharField(_('resource path'), max_length=500, db_index=True, unique=True,
         help_text=_("Path used in URI to find this resource."), blank=True)
     published = models.BooleanField(_('published'), default=False,
         help_text=_("The resource is published."))
@@ -182,7 +186,7 @@ class Resource(models.Model):
         verbose_name_plural = _('resources')
         permissions = (('preview_resource', 'Can preview resource'), )
         ordering = ['order', 'uri_path', 'title', ]
-        unique_together = (('uri_path', 'published', ), )
+        unique_together = (('slug', 'parent', ), )
 
     def __unicode__(self):
         return '[%s] - %s (%s)' % (

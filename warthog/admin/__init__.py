@@ -12,7 +12,6 @@ from django.utils.translation import ugettext_lazy as _
 from warthog import cache
 from warthog.models import Template, ResourceType, ResourceTypeField, Resource
 from warthog.admin.forms import ResourceFieldsForm, ResourceAddForm
-from warthog.admin import uploads
 
 
 class CachedModelAdmin(admin.ModelAdmin):
@@ -61,10 +60,16 @@ class ResourceTypeFieldInline(admin.TabularInline):
 
 class ResourceTypeAdmin(admin.ModelAdmin):
     inlines = (ResourceTypeFieldInline, )
-    list_display = ('name', 'description', 'created', 'updated', )
+    list_display = ('name', 'description', 'child_types_list', 'created', 'updated', )
     prepopulated_fields = {'code': ('name', )}
     save_on_top = True
     save_as = True
+    filter_horizontal = ('child_types',)
+
+    def child_types_list(self, obj):
+        return ', '.join([str(c.name) for c in obj.child_types.all()])
+    child_types_list.short_description = _('child types')
+
 
 admin.site.register(ResourceType, ResourceTypeAdmin)
 
@@ -86,19 +91,19 @@ class ResourceAdmin(CachedModelAdmin):
     """
     fieldsets = [
         (None, {
-            'fields': ('title', 'uri_path', ('published', 'hide_from_menu') , ('publish_date', 'unpublish_date'), ),
+            'fields': ('title', 'slug', 'uri_path', ('published', 'hide_from_menu') , ('publish_date', 'unpublish_date'), ),
         }),
         ('Details', {
             'fields': (('created', 'updated'),),
         }),
         ('Advanced', {
-            'classes': ('collapsible',),
+            'classes': ('collapse',),
             'fields': ('parent', 'menu_title_raw', 'menu_class', 'order', ),
         }),
     ]
     add_fieldsets = [
         (None, {
-            'fields': ('type', 'title', 'uri_path', 'parent', )
+            'fields': ('type', 'title', 'slug', 'parent', )
         }),
         ('Hidden', {
             'classes': ('hidden',),
@@ -109,8 +114,9 @@ class ResourceAdmin(CachedModelAdmin):
     list_display_links = ('title', 'uri_path', )
     list_filter = ('published', 'deleted', 'type', )
     actions = ('make_published', 'make_unpublished', 'clear_cache', )
-    prepopulated_fields = {'uri_path': ('title', )}
-    readonly_fields = ('created', 'updated', )
+    prepopulated_fields = {'slug': ('title', )}
+    readonly_fields = ('created', 'updated', 'uri_path', )
+    readonly_fields_superuser = ('created', 'updated', )
     save_on_top = True
     save_as = True
 
@@ -175,9 +181,16 @@ class ResourceAdmin(CachedModelAdmin):
     make_unpublished.short_description = _('Un-publish selected resources')
 
     def save_model(self, request, obj, form, change):
-        if not obj.uri_path.startswith('/'):
-            obj.uri_path = '/' + obj.uri_path
+        import posixpath
+        if not obj.uri_path:
+            obj.uri_path = posixpath.join(obj.parent.uri_path, obj.slug)
         obj.save()
+
+    def get_readonly_fields(self, request, obj=None):
+        if request.user.is_superuser:
+            return self.readonly_fields_superuser
+        else:
+            return self.readonly_fields
 
     def get_fieldsets(self, request, obj=None):
         if not obj:
