@@ -35,15 +35,15 @@ class TemplateAdmin(admin.ModelAdmin):
     """
     fieldsets = [
         (None, {
-            'fields': ('name', 'description', 'cacheable', ) ,
-            }),
+            'fields': ('site', 'name', 'description', 'cacheable', ) ,
+        }),
         ('Content', {
             'fields': ('mime_type', 'content', ),
             'classes': ('wide', 'monospace', ),
-            }),
+        }),
         ('Details', {
             'fields': ('created', 'updated', ),
-            }),
+        }),
     ]
     list_display = ('name', 'description', 'created', 'updated', )
     list_display_links = ('name', )
@@ -98,7 +98,7 @@ class ResourceAdmin(CachedModelAdmin):
         }),
         ('Advanced', {
             'classes': ('collapse',),
-            'fields': ('parent', 'menu_title_raw', 'menu_class', 'order', ),
+            'fields': ('site', 'parent', 'menu_title_raw', 'menu_class', 'order', ),
         }),
     ]
     add_fieldsets = [
