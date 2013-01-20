@@ -1,12 +1,17 @@
+import logging
 from django.forms import fields
 from django.forms import widgets
 from django.contrib.admin import widgets as admin_widgets
+
 
 DEFAULT_FIELD = (
     'Character field',
     fields.CharField,
     None
 )
+
+
+log = logging.getLogger('warthog.fields')
 
 
 # Registered list of fields (with defaults)
@@ -67,6 +72,7 @@ def register(code, label, field, widget=None):
     if len(code) > 25:
         raise ValueError('"code" argument must be 25 characters or less.')
     __resource_fields[code] = (label, field, widget)
+    log.info("Registered resource field `%s` as: %s", label, code)
 
 
 def remove(code):
@@ -80,10 +86,11 @@ def remove(code):
 
     """
     __resource_fields.pop(code)
+    log.info("Removed resource field: %s", code)
 
 
 def get_field_choices():
-    """Generate a choices list of for using in models.
+    """Generate a choices list of resource names for using in models.
 
     :return: [(code, label), ...]
     """
@@ -118,6 +125,6 @@ def get_field_instance(code, field_kwargs=None, widget_kwargs=None):
 try:
     from tinymce.widgets import AdminTinyMCE
 except ImportError:
-    pass
+    register('html', 'HTML Field', fields.CharField, admin_widgets.AdminTextareaWidget)
 else:
     register('html', 'HTML Field', fields.CharField, AdminTinyMCE)
