@@ -175,6 +175,11 @@ class Resource(models.Model):
         help_text=_('Ordering used to render element.'))
     deleted = models.BooleanField(_('deleted'), default=False,
         help_text=_("The resource should be treated as deleted and not displayed to the public at any time."))
+    edit_lock = models.BooleanField(_('Edit locked'), default=False,
+        help_text=_(
+            "Lock this resource so only admin users or users with the `Can edit locked resources` permission can edit"
+            "this resource. This flag is used to prevent structural resources from being modified."
+        ))
     # Details
     created = models.DateTimeField(_('creation date'), auto_now_add=True)
     updated = models.DateTimeField(_('last modified'), auto_now=True)
@@ -184,7 +189,10 @@ class Resource(models.Model):
     class Meta:
         verbose_name = _('resource')
         verbose_name_plural = _('resources')
-        permissions = (('preview_resource', 'Can preview resource'), )
+        permissions = (
+            ('preview_resource', 'Can preview resource'),
+            ('edit_locked_resource', 'Can edit locked resources.'),
+            )
         ordering = ['order', 'uri_path', 'title', ]
         unique_together = (('slug', 'parent', ), )
 
@@ -238,6 +246,13 @@ class Resource(models.Model):
         bool(False))."""
         return self.menu_title_raw or self.title
 
+    def can_modify(self, user):
+        """Check if a particular user can edit this resource"""
+        if self.edit_lock:
+            return user.is_superuser or user.has_perm('edit_locked_resource')
+        else:
+            return True
+
 
 class ResourceField(models.Model):
     """Template variable that is applied to a resource."""
@@ -250,4 +265,4 @@ class ResourceField(models.Model):
         unique_together = (('resource', 'code',), )
 
     def __unicode__(self):
-        return "%s=%s " % (self.code, self.value)
+        return "%s=%s" % (self.code, self.value)
