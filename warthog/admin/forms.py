@@ -5,12 +5,15 @@ from warthog.admin import uploads
 
 
 class ResourceFieldsForm(forms.Form):
+    """
+    Form that dynamically creates form fields based on a ResourceType definition.
+    """
     def __init__(self, resource_type, instance=None, *args, **kwargs):
         self.resource_type = resource_type
         super(ResourceFieldsForm, self).__init__(*args, **kwargs)
 
         initial = kwargs.get('initial', {})
-        for field in  self.resource_type.fields.all():
+        for field in self.resource_type.fields.all():
             field_instance = fields.get_field_instance(field.field_type, field.get_kwargs())
             self.fields[field.code] = field_instance
             if isinstance(field_instance, forms.FileField) and field.code in initial:
@@ -18,6 +21,10 @@ class ResourceFieldsForm(forms.Form):
         self.initial = initial
 
     def save_to(self, obj):
+        """
+        Save the values on this form to a resource object.
+        :param obj: ResourceObject to save form fields to.
+        """
         changed_data = self.changed_data
         cleaned_data = self.cleaned_data
         obj.fields.filter(code__in=changed_data).delete()
@@ -37,5 +44,3 @@ class ResourceAddForm(forms.ModelForm):
         model = Resource
         fields = ('type', 'title', 'slug', 'parent', 'order')
         readonly = ('parent', )
-
-
