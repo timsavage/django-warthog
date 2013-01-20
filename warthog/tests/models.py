@@ -18,7 +18,7 @@ TEST_RESOURCES = {
     'live_in_range': Resource(deleted=False, published=True, publish_date=PAST, unpublish_date=FUTURE),
     'live_no_start': Resource(deleted=False, published=True, publish_date=None, unpublish_date=FUTURE),
     'live_no_end': Resource(deleted=False, published=True, publish_date=PAST, unpublish_date=None),
-    }
+}
 
 PUBLISHED_STATUS = lambda t: t.published_status
 IS_LIVE = lambda t: t.is_live

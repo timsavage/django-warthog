@@ -64,7 +64,7 @@ class Cms(View):
         """Handle rendering of the resource."""
 
         # Build up rendering context
-        params = dict([(r.code, mark_safe(r.value)) for r in resource.fields.all()])
+        params = {r.code: mark_safe(r.value) for r in resource.fields.all()}
         params['title'] = resource.title
 
         context = CmsRequestContext(self.request, resource, params)
