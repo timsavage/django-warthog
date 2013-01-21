@@ -177,7 +177,7 @@ class Resource(models.Model):
         help_text=_("The resource should be treated as deleted and not displayed to the public at any time."))
     edit_lock = models.BooleanField(_('Edit locked'), default=False,
         help_text=_(
-            "Lock this resource so only admin users or users with the `Can edit locked resources` permission can edit"
+            "Lock this resource so only `Can admin resources` permission can edit"
             "this resource. This flag is used to prevent structural resources from being modified."
         ))
     # Details
@@ -191,8 +191,8 @@ class Resource(models.Model):
         verbose_name_plural = _('resources')
         permissions = (
             ('preview_resource', 'Can preview resource'),
-            ('edit_locked_resource', 'Can edit locked resources.'),
-            )
+            ('admin_resource', 'Can admin resources.'),
+        )
         ordering = ['order', 'uri_path', 'title', ]
         unique_together = (('slug', 'parent', ), )
 
@@ -246,12 +246,11 @@ class Resource(models.Model):
         bool(False))."""
         return self.menu_title_raw or self.title
 
-    def can_modify(self, user):
+    def is_locked_for_user(self, user):
         """Check if a particular user can edit this resource"""
         if self.edit_lock:
-            return user.is_superuser or user.has_perm('edit_locked_resource')
-        else:
-            return True
+            return not user.has_perm('warthog.admin_resource')
+        return False
 
 
 class ResourceField(models.Model):

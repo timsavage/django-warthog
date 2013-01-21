@@ -98,7 +98,7 @@ class ResourceAdmin(CachedModelAdmin):
         }),
         ('Advanced', {
             'classes': ('collapse',),
-            'fields': ('parent', 'menu_title_raw', 'menu_class', 'order', ),
+            'fields': ('parent', 'menu_title_raw', 'menu_class', 'order', 'edit_lock', ),
         }),
     ]
     add_fieldsets = [
@@ -115,7 +115,7 @@ class ResourceAdmin(CachedModelAdmin):
     list_filter = ('published', 'deleted', 'type', )
     actions = ('make_published', 'make_unpublished', 'clear_cache', )
     prepopulated_fields = {'slug': ('title', )}
-    readonly_fields = ('created', 'updated', 'uri_path', )
+    readonly_fields = ('created', 'updated', 'uri_path', 'edit_lock', )
     readonly_fields_superuser = ('created', 'updated', )
     save_on_top = True
     save_as = True
@@ -183,11 +183,14 @@ class ResourceAdmin(CachedModelAdmin):
     def save_model(self, request, obj, form, change):
         import posixpath
         if not obj.uri_path:
-            obj.uri_path = posixpath.join(obj.parent.uri_path, obj.slug)
+            if obj.parent:
+                obj.uri_path = posixpath.join(obj.parent.uri_path, obj.slug)
+            else:
+                obj.uri_path = '/'
         obj.save()
 
     def get_readonly_fields(self, request, obj=None):
-        if request.user.is_superuser:
+        if request.user.has_perm('warthog.admin_resource'):
             return self.readonly_fields_superuser
         else:
             return self.readonly_fields
@@ -213,6 +216,16 @@ class ResourceAdmin(CachedModelAdmin):
         the object is being changed, and False if it's being added.
         """
         return form.save_to(obj)
+
+    def has_change_permission(self, request, obj=None):
+        if obj and obj.is_locked_for_user(request.user):
+            return False
+        return super(ResourceAdmin, self).has_change_permission(request, obj)
+
+    def has_delete_permission(self, request, obj=None):
+        if obj and obj.is_locked_for_user(request.user):
+            return False
+        return super(ResourceAdmin, self).has_delete_permission(request, obj)
 
     @transaction.commit_on_success
     def change_view(self, request, object_id, form_url='', extra_context=None):
