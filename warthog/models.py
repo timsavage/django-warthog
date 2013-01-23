@@ -4,7 +4,7 @@ from django.db import models
 from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _
 from warthog.managers import CachingManager, ResourceManager, ResourceTypeManager
-from warthog import fields
+from warthog import templatevars
 
 
 code_name = RegexValidator(r'^\w+$', message='Code value')
@@ -93,7 +93,7 @@ class ResourceTypeField(models.Model):
     code = models.CharField(_('code'), max_length=50, validators=[code_name],
         help_text=_('Code name used to reference this field.'))
     field_type = models.CharField(_('field type'), max_length=25,
-        choices=fields.get_field_choices())
+        choices=templatevars.library.choices)
     required = models.BooleanField(_('required'), default=False,
         help_text=_('This field is required'))
     label_raw = models.CharField(_('label'), max_length=200, null=True, blank=True,

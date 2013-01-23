@@ -1,6 +1,6 @@
 from django import forms
 from warthog.models import Resource
-from warthog import fields
+from warthog import templatevars
 from warthog.admin import uploads
 
 
@@ -14,7 +14,7 @@ class ResourceFieldsForm(forms.Form):
 
         initial = kwargs.get('initial', {})
         for field in self.resource_type.fields.all():
-            field_instance = fields.get_field_instance(field.field_type, field.get_kwargs())
+            field_instance = templatevars.library[field.field_type].create_form_field(field.get_kwargs())
             self.fields[field.code] = field_instance
             if isinstance(field_instance, forms.FileField) and field.code in initial:
                 initial[field.code] = uploads.as_field_file(initial[field.code])
@@ -28,15 +28,17 @@ class ResourceFieldsForm(forms.Form):
         changed_data = self.changed_data
         cleaned_data = self.cleaned_data
         obj.fields.filter(code__in=changed_data).delete()
-        for code, value, field in [(code, cleaned_data[code], self.fields[code]) for code in changed_data]:
-            if isinstance(field, forms.FileField):
-                if value:
-                    obj.fields.create(code=code,
-                        value=uploads.save_file('resource/%s/%s-%s' % (
-                            obj.pk, code, value.name), value),
-                    )
-            else:
-                obj.fields.create(code=code, value=value)
+        for code, value in ((code, cleaned_data[code]) for code in changed_data):
+            obj.fields.create(code=code, value=templatevars.library[code].to_database(value))
+
+#            if isinstance(field, forms.FileField):
+#                if value:
+#                    obj.fields.create(code=code,
+#                        value=uploads.save_file('resource/%s/%s-%s' % (
+#                            obj.pk, code, value.name), value),
+#                    )
+#            else:
+#                obj.fields.create(code=code, value=value)
 
 
 class ResourceAddForm(forms.ModelForm):
