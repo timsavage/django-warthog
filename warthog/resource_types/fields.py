@@ -2,6 +2,7 @@ import datetime
 from django.contrib.admin import widgets as admin_widgets
 from django.core import validators
 from django.forms import fields
+from warthog.resource_types import uploads
 # Attempt Tinymce for HTML widget
 try:
     from tinymce.widgets import AdminTinyMCE as AdminHtmlWidget
@@ -14,18 +15,22 @@ class ResourceFieldBase(object):
     field = fields.CharField
     widget = None
 
-    def to_database(self, value):
+    def to_database(self, value, id, code):
         """
         Convert an internal value into a string form for storage in the database.
         :param value: The value to be converted to a string.
+        :param id: ID of model this item is being saved to.
+        :param code: Field code this item is being saved for.
         :return:
         """
         return value
 
-    def to_python(self, value):
+    def to_python(self, value, id, code):
         """
         Convert a value from the database into a value for use internally and in views.
-        :param str_value: Value from the database.
+        :param value: Value from the database.
+        :param id: ID of the model this item is being loaded from.
+        :param code: Field code this item is being loaded for.
         :return:
         """
         return value
@@ -58,10 +63,10 @@ class BooleanResourceField(ResourceFieldBase):
     label = "Checkbox"
     field = fields.BooleanField
 
-    def to_database(self, value):
+    def to_database(self, value, id, code):
         return 'true' if value else 'false'
 
-    def to_python(self, value):
+    def to_python(self, value, id, code):
         if isinstance(value, basestring) and value.lower() in ('false', '0'):
             return False
         else:
@@ -69,7 +74,7 @@ class BooleanResourceField(ResourceFieldBase):
 
 
 class TemporalResourceField(ResourceFieldBase):
-    def to_python(self, value):
+    def to_python(self, value, id, code):
         if value in validators.EMPTY_VALUES:
             return None
         return self.strptime(value)
@@ -85,7 +90,7 @@ class DateResourceField(TemporalResourceField):
 
     FORMAT = '%Y-%m-%d'
 
-    def to_database(self, value):
+    def to_database(self, value, id, code):
         if isinstance(value, (datetime.date, datetime.datetime)):
             return value.strftime(self.FORMAT)
         else:
@@ -102,7 +107,7 @@ class TimeResourceField(TemporalResourceField):
 
     FORMAT = '%H:%M:%S'
 
-    def to_database(self, value):
+    def to_database(self, value, id, code):
         if isinstance(value, (datetime.time, datetime.datetime)):
             return value.strftime(self.FORMAT)
         else:
@@ -119,13 +124,13 @@ class DateTimeResourceField(ResourceFieldBase):
 
     FORMAT = '%Y-%m-%dT%H:%M:%S'
 
-    def to_database(self, value):
+    def to_database(self, value, id, code):
         if isinstance(value, datetime.datetime):
             return value.strftime(self.FORMAT)
         else:
             return str(value)
 
-    def to_python(self, value):
+    def to_python(self, value, id, code):
         if value in validators.EMPTY_VALUES:
             return None
         return datetime.datetime.strptime(value, self.FORMAT)
@@ -133,7 +138,7 @@ class DateTimeResourceField(ResourceFieldBase):
 
 class HtmlResourceField(ResourceFieldBase):
     """
-    HTML resource
+    HTML resource_types
     """
     label = "HTML"
     widget = AdminHtmlWidget
@@ -144,10 +149,12 @@ class FileResourceField(ResourceFieldBase):
     field = fields.FileField
     widget = admin_widgets.AdminFileWidget
 
-#    def to_database(self, value):
-#        return uploads.save_file('resource/%s/%s-%s' % (
-#                obj.pk, code, value.name), value),
-#        )
+    def to_database(self, value, id, code):
+        return uploads.save_file('resource_types/%s/%s-%s' % (id, code, value.name), value)
+
+    def to_python(self, value, id, code):
+        if value:
+            return uploads.as_field_file(value)
 
 
 class ImageResourceField(FileResourceField):

@@ -39,14 +39,14 @@ setup(
         'warthog.admin',
         'warthog.migrations',
         'warthog.templatetags',
-        'warthog.templatevars',
+        'warthog.resource_types',
         'warthog.tests',
         ],
     package_data={
         'warthog': [
             'static/admin/css/warthog.css',
             'static/admin/css/img/warthog-sprite.png',
-            'templates/admin/warthog/resource/*.html',
+            'templates/admin/warthog/resource_types/*.html',
             'templates/admin/warthog/*.html',
             'templates/warthog/*.html',
         ],

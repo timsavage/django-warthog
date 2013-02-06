@@ -134,7 +134,7 @@ class ResourceAdmin(CachedModelAdmin):
         add_uri = reverse('admin:warthog_resource_add')
         actions = []
         for type in child_types:
-            actions.append('<li><a href="%s?parent=%s&type=%s">Add %s resource</a></li>' % (
+            actions.append('<li><a href="%s?parent=%s&type=%s">Add %s resource_types</a></li>' % (
                 add_uri, obj.pk, type.pk, type.name))
         return '<ul>%s</ul>' % ''.join(actions)
     html_actions.short_description = _('Actions')
@@ -165,7 +165,7 @@ class ResourceAdmin(CachedModelAdmin):
     def make_published(self, request, queryset):
         rows_updated = queryset.update(published=True)
         if rows_updated == 1:
-            message_bit = "1 resource was"
+            message_bit = "1 resource_types was"
         else:
             message_bit = "%s resources were" % rows_updated
         self.message_user(request, "%s successfully published." % message_bit)
@@ -174,7 +174,7 @@ class ResourceAdmin(CachedModelAdmin):
     def make_unpublished(self, request, queryset):
         rows_updated = queryset.update(published=False)
         if rows_updated == 1:
-            message_bit = "1 resource was"
+            message_bit = "1 resource_types was"
         else:
             message_bit = "%s resources were" % rows_updated
         self.message_user(request, "%s successfully un-published." % message_bit)
@@ -246,9 +246,10 @@ class ResourceAdmin(CachedModelAdmin):
 #                current_app=self.admin_site.name), resource_type_code=obj.type)
 
         ModelForm = self.get_form(request, obj)
+        initial=dict(obj.fields.all().values_list('code', 'value'))
         if request.method == 'POST':
             form = ModelForm(data=request.POST, instance=obj)
-            fields_form = ResourceFieldsForm(obj.type, prefix='fields', data=request.POST, files=request.FILES)
+            fields_form = ResourceFieldsForm(obj.type, instance=obj, initial=initial, prefix='fields', data=request.POST, files=request.FILES)
 
             if form.is_valid() and fields_form.is_valid():
                 obj = self.save_form(request, form, change=False)
@@ -260,7 +261,7 @@ class ResourceAdmin(CachedModelAdmin):
             form = ModelForm(instance=obj)
 
             # Populate form
-            fields_form = ResourceFieldsForm(obj.type, initial=dict(obj.fields.all().values_list('code', 'value')), prefix='fields')
+            fields_form = ResourceFieldsForm(obj.type, instance=obj, initial=initial, prefix='fields')
 
         adminForm = helpers.AdminForm(form, list(self.get_fieldsets(request, obj)),
             self.get_prepopulated_fields(request, obj),
