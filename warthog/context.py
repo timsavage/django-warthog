@@ -1,3 +1,4 @@
+# coding=utf-8
 from django.template.context import RequestContext
 
 
@@ -7,6 +8,7 @@ class CmsRequestContext(RequestContext):
     requests.
 
     """
-    def __init__(self, request, resource, *args, **kwargs):
+    def __init__(self, site, request, resource, *args, **kwargs):
+        self.site = site
         self.resource = resource
         super(CmsRequestContext, self).__init__(request, *args, **kwargs)

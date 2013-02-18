@@ -1,6 +1,8 @@
+# coding=utf-8
+from django.contrib.sites.models import get_current_site
 from django.http import HttpResponse, Http404
-from django.shortcuts import get_object_or_404, render
-from django.template import Template, loader
+from django.shortcuts import get_object_or_404
+from django.template import loader
 from django.utils.log import getLogger
 from django.utils.safestring import mark_safe
 from django.views.generic import View
@@ -67,13 +69,17 @@ class Cms(View):
         params = {r.code: mark_safe(r.value) for r in resource.fields.all()}
         params['title'] = resource.title
 
-        context = CmsRequestContext(self.request, resource, params)
+        context = CmsRequestContext(self.site, self.request, resource, params)
 
-        template = loader.get_template(resource.type.default_template)
-        return HttpResponse(template.render(context))#, mimetype=template.mime_type)
+        template = loader.select_template([
+            "%s/%s" % (self.site.domain, resource.type.default_template),
+            resource.type.default_template
+        ])
+        return HttpResponse(template.render(context))
 
     def get(self, request, *args, **kwargs):
         """Respond to ``get`` HTTP method."""
+        self.site = get_current_site(request)
         resource = self.load_resource(*args, **kwargs)
 
         if not self.can_serve(resource):
