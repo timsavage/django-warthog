@@ -40,7 +40,7 @@ def release():
     version_string = get_version()
 
     # Run tests
-    local('python test_runner.py')
+    local('python manage.py')
 
     print "Current version:", version_string
     version = None
