@@ -9,7 +9,7 @@ from warthog.managers import CachingManager, ResourceManager, ResourceTypeManage
 from warthog import resource_types
 
 
-code_name = RegexValidator(r'^\w+$', message='Code value')
+code_name = RegexValidator(r'^[-\w]+$', message='Code value')
 
 
 class Template(models.Model):
@@ -39,7 +39,7 @@ class Template(models.Model):
     )
 
     # Description
-    site = models.ManyToManyField(Site)
+    site = models.ManyToManyField(Site, default=[settings.SITE_ID])
     name = models.CharField(_('name'), max_length=100, db_index=True, unique=True)
     description = models.CharField(_('description'), max_length=250, blank=True,
         help_text=_("Optional description of template."))
@@ -66,7 +66,7 @@ class ResourceType(models.Model):
     """
     Defines a resource and what fields that are associated with it.
     """
-    site = models.ManyToManyField(Site)
+    site = models.ManyToManyField(Site, default=[settings.SITE_ID])
     name = models.CharField(_('name'), max_length=50, unique=True)
     code = models.CharField(_('code'), max_length=50, unique=True, validators=[code_name],
         help_text=_('Code name used to reference this field.'))
@@ -159,13 +159,14 @@ class Resource(models.Model):
         STATUS_LIVE: ('live', _('Live'), _('This resource is live.')),
     }
 
+    site = models.ForeignKey(Site, default=settings.SITE_ID)
     type = models.ForeignKey(ResourceType, related_name=_('resources'))
     title = models.CharField(_('title'), max_length=100,
         help_text=_("The name/title of the resource. Avoid using backslashes in the name."))
     slug = models.CharField(_('slug'), max_length=100, null=True,
         help_text=_('Resource identifier used to create URI path.'))
-    uri_path = models.CharField(_('resource path'), max_length=500, db_index=True, unique=True,
-        help_text=_("Path used in URI to find this resource."), blank=True)
+    uri_path = models.CharField(_('resource path'), max_length=500, db_index=True, blank=True,
+        help_text=_("Path used in URI to find this resource."))
     published = models.BooleanField(_('published'), default=False,
         help_text=_("The resource is published."))
     publish_date = models.DateTimeField(_('go live date'), null=True, blank=True,
@@ -190,7 +191,6 @@ class Resource(models.Model):
             "Lock this resource so only `Can admin resources` permission can edit"
             "this resource. This flag is used to prevent structural resources from being modified."
         ))
-    site = models.ManyToManyField(Site, default=settings.SITE_ID)
 
     # Details
     created = models.DateTimeField(_('creation date'), auto_now_add=True)
@@ -206,7 +206,7 @@ class Resource(models.Model):
             ('admin_resource', 'Can admin resources.'),
         )
         ordering = ['order', 'uri_path', 'title', ]
-        unique_together = (('slug', 'parent', ), )
+        unique_together = (('site', 'slug', 'parent', ), )
 
     def __unicode__(self):
         return '[%s] - %s (%s)' % (

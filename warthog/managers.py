@@ -1,5 +1,6 @@
 from django.db import models
 from django.db.models.query import QuerySet
+from django.conf import settings
 from django.core.cache import cache
 
 
@@ -92,8 +93,33 @@ class ResourceManager(CachingManager):
     def get_query_set(self):
         return super(ResourceManager, self).get_query_set().select_related('fields')
 
+    def get_front(self, **filters):
+        """
+        Apply default filters for getting an item for front display.
+
+        By default applies published=True, delete=False, site=settings.SITE_ID
+
+        :param filters: additional filters to apply
+        :return: Resource
+        """
+        filters.update(published=True, deleted=False, site=settings.SITE_ID)
+        return self.get(**filters)
+
+    def filter_front(self, **filters):
+        """
+        Apply default filters for front display of items.
+
+        By default applies published=True, delete=False, site=settings.SITE_ID
+
+        :param filters: additional filters to apply
+        :return: Queryset
+        """
+        filters.update(published=True, deleted=False, site=settings.SITE_ID)
+        return self.filter(**filters)
+
     def get_uri_path(self, uri_path):
-        """Get a resource from the URI path.
+        """
+        Get a resource from the URI path.
 
         :param uri_path: path to search for.
 
@@ -108,7 +134,7 @@ class ResourceManager(CachingManager):
         resource = cache.get(cache_key) if cache_key else None
 
         if not resource:
-            resource = self.get(uri_path__exact=uri_path, published=True, deleted=False)
+            resource = self.get_front(uri_path__exact=uri_path)
 
             cache_key = generate_cache_key(self.model, pk=resource.pk)
             cache.set(cache_key, resource)

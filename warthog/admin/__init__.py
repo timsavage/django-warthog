@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.contrib import admin
 from django.contrib.admin.util import unquote
 from django.core.exceptions import PermissionDenied
@@ -51,6 +52,16 @@ class TemplateAdmin(admin.ModelAdmin):
     save_on_top = True
     save_as = True
 
+    def queryset(self, request):
+        """
+        Returns a QuerySet of all model instances that can be edited by the
+        admin site. This is used by changelist_view.
+        """
+        qs = super(TemplateAdmin, self).queryset(request)
+        if request.user.is_superuser and 'all' in request.GET:
+            return qs
+        return qs.filter(site=settings.SITE_ID)
+
 admin.site.register(Template, TemplateAdmin)
 
 
@@ -70,6 +81,15 @@ class ResourceTypeAdmin(admin.ModelAdmin):
         return ', '.join([str(c.name) for c in obj.child_types.all()])
     child_types_list.short_description = _('child types')
 
+    def queryset(self, request):
+        """
+        Returns a QuerySet of all model instances that can be edited by the
+        admin site. This is used by changelist_view.
+        """
+        qs = super(ResourceTypeAdmin, self).queryset(request)
+        if request.user.is_superuser and 'all' in request.GET:
+            return qs
+        return qs.filter(site=settings.SITE_ID)
 
 admin.site.register(ResourceType, ResourceTypeAdmin)
 
@@ -91,7 +111,8 @@ class ResourceAdmin(CachedModelAdmin):
     """
     fieldsets = [
         (None, {
-            'fields': ('title', 'slug', 'uri_path', ('published', 'hide_from_menu') , ('publish_date', 'unpublish_date'), ),
+            'fields': ('title', 'slug', 'uri_path', ('published', 'hide_from_menu'),
+                       ('publish_date', 'unpublish_date'),),
         }),
         ('Details', {
             'fields': (('created', 'updated'),),
@@ -103,19 +124,20 @@ class ResourceAdmin(CachedModelAdmin):
     ]
     add_fieldsets = [
         (None, {
-            'fields': ('type', 'title', 'slug', 'parent', )
+            'fields': ('site', 'type', 'title', 'slug', 'parent', )
         }),
         ('Hidden', {
             'classes': ('hidden',),
             'fields': ('order', )
         }),
     ]
-    list_display = ('html_status', 'title', 'uri_path', 'html_type', 'published', 'publish_summary', 'unpublish_summary', 'html_actions', )
+    list_display = ('html_status', 'title', 'uri_path', 'html_type', 'published', 'publish_summary',
+                    'unpublish_summary', 'html_actions', )
     list_display_links = ('title', 'uri_path', )
     list_filter = ('published', 'deleted', 'type', )
-    actions = ('make_published', 'make_unpublished', 'clear_cache', )
+    actions = ('make_published', 'make_unpublished', 'clear_cache',)
     prepopulated_fields = {'slug': ('title', )}
-    readonly_fields = ('created', 'updated', 'uri_path', 'edit_lock', )
+    readonly_fields = ('created', 'updated', 'uri_path', 'edit_lock', 'site',)
     readonly_fields_superuser = ('created', 'updated', )
     save_on_top = True
     save_as = True
@@ -204,6 +226,16 @@ class ResourceAdmin(CachedModelAdmin):
         if not obj:
             return ResourceAddForm
         return super(ResourceAdmin, self).get_form(request, obj, **kwargs)
+
+    def queryset(self, request):
+        """
+        Returns a QuerySet of all model instances that can be edited by the
+        admin site. This is used by changelist_view.
+        """
+        qs = super(ResourceAdmin, self).queryset(request)
+        if request.user.is_superuser and 'all' in request.GET:
+            return qs
+        return qs.filter(site=settings.SITE_ID)
 
     def response_add(self, request, obj, post_url_continue='../%s/'):
         if '_addanother' not in request.POST and '_popup' not in request.POST:

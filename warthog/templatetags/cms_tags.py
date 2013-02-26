@@ -9,9 +9,12 @@ register = template.Library()
 def get_resource(pk):
     """Get a resource from it's ID."""
     try:
-        return Resource.objects.get(pk=pk)
+        resource = Resource.objects.get_front(pk=pk)
     except Resource.DoesNotExist:
         return None
+    else:
+        if resource.is_live:
+            return resource
 
 
 @register.assignment_tag

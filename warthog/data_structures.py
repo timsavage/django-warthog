@@ -57,7 +57,7 @@ class ResourceIterator(object):
         :param resource_type: Resource type object.
         :return:
         """
-        queryset = Resource.objects.filter(type_id=resource_type.id)
+        queryset = Resource.objects.filter_front(type_id=resource_type.id)
         if not include_hidden:
             queryset = queryset.filter(hide_from_menu=False)
         return cls(queryset)
@@ -70,9 +70,9 @@ class ResourceIterator(object):
         :param resource:
         :return:
         """
-        queryset = resource.children.all()
+        queryset = resource.children.filter_front()
         if not include_hidden:
-            queryset = queryset.filter(hide_from_menu=False)
+            queryset = queryset.filter_front(hide_from_menu=False)
         return cls(queryset)
 
     def __iter__(self):

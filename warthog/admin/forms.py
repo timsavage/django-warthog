@@ -33,5 +33,5 @@ class ResourceFieldsForm(forms.Form):
 class ResourceAddForm(forms.ModelForm):
     class Meta:
         model = Resource
-        fields = ('type', 'title', 'slug', 'parent', 'order')
+        fields = ('site', 'type', 'title', 'slug', 'parent', 'order')
         readonly = ('parent', )
