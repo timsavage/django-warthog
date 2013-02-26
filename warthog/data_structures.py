@@ -48,7 +48,7 @@ class ResourceIterator(object):
     Resource iterator for iterating over resource query sets
     """
     def __init__(self, queryset):
-        self.resources = [resource for resource in queryset if resource.is_live]
+        self.resources = queryset
 
     @classmethod
     def for_type(cls, resource_type, include_hidden=False):
@@ -77,7 +77,8 @@ class ResourceIterator(object):
 
     def __iter__(self):
         for resource in self.resources:
-            yield ResourceItem(resource)
+            if resource.is_live:
+                yield ResourceItem(resource)
 
     def __len__(self):
         return len(self.resources)

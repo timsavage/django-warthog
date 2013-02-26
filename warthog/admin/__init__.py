@@ -134,7 +134,7 @@ class ResourceAdmin(CachedModelAdmin):
         add_uri = reverse('admin:warthog_resource_add')
         actions = []
         for type in child_types:
-            actions.append('<li><a href="%s?parent=%s&type=%s">Add %s resource_types</a></li>' % (
+            actions.append('<li><a href="%s?parent=%s&type=%s">Add %s resource</a></li>' % (
                 add_uri, obj.pk, type.pk, type.name))
         return '<ul>%s</ul>' % ''.join(actions)
     html_actions.short_description = _('Actions')
@@ -165,7 +165,7 @@ class ResourceAdmin(CachedModelAdmin):
     def make_published(self, request, queryset):
         rows_updated = queryset.update(published=True)
         if rows_updated == 1:
-            message_bit = "1 resource_types was"
+            message_bit = "1 resource was"
         else:
             message_bit = "%s resources were" % rows_updated
         self.message_user(request, "%s successfully published." % message_bit)
@@ -174,7 +174,7 @@ class ResourceAdmin(CachedModelAdmin):
     def make_unpublished(self, request, queryset):
         rows_updated = queryset.update(published=False)
         if rows_updated == 1:
-            message_bit = "1 resource_types was"
+            message_bit = "1 resource was"
         else:
             message_bit = "%s resources were" % rows_updated
         self.message_user(request, "%s successfully un-published." % message_bit)
