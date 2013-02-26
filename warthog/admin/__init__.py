@@ -333,7 +333,7 @@ class ResourceAdmin(CachedModelAdmin):
             'inline_admin_formsets': [],
             'errors': ResourceErrorList(form, fields_form),
             'app_label': opts.app_label,
-            }
+        }
         return self.render_change_form(request, context, change=True, obj=obj, form_url=form_url)
 
 
