@@ -72,14 +72,26 @@ class ResourceTypeFieldInline(admin.TabularInline):
 class ResourceTypeAdmin(admin.ModelAdmin):
     inlines = (ResourceTypeFieldInline, )
     list_display = ('name', 'description', 'child_types_list', 'created', 'updated', )
+    list_display_superuser = ('name', 'site_summary', 'description', 'child_types_list', 'created', 'updated', )
     prepopulated_fields = {'code': ('name', )}
     save_on_top = True
     save_as = True
     filter_horizontal = ('child_types',)
 
+    def site_summary(self, obj):
+        """Summary of sites."""
+        return ', '.join(s.name for s in obj.site.all())
+    site_summary.short_description = _('Sites')
+
     def child_types_list(self, obj):
-        return ', '.join([str(c.name) for c in obj.child_types.all()])
+        return ', '.join(str(c.name) for c in obj.child_types.all())
     child_types_list.short_description = _('child types')
+
+    def get_list_display(self, request):
+        if request.user.is_superuser:
+            return self.list_display_superuser
+        else:
+            return self.list_display
 
     def queryset(self, request):
         """
@@ -87,7 +99,7 @@ class ResourceTypeAdmin(admin.ModelAdmin):
         admin site. This is used by changelist_view.
         """
         qs = super(ResourceTypeAdmin, self).queryset(request)
-        if request.user.is_superuser and 'all' in request.GET:
+        if request.user.is_superuser:
             return qs
         return qs.filter(site=settings.SITE_ID)
 
@@ -132,6 +144,8 @@ class ResourceAdmin(CachedModelAdmin):
         }),
     ]
     list_display = ('html_status', 'title', 'uri_path', 'html_type', 'published', 'publish_summary',
+                    'unpublish_summary', 'html_actions', )
+    list_display_superuser = ('html_status', 'site', 'title', 'uri_path', 'html_type', 'published', 'publish_summary',
                     'unpublish_summary', 'html_actions', )
     list_display_links = ('title', 'uri_path', )
     list_filter = ('published', 'deleted', 'type', )
@@ -210,6 +224,12 @@ class ResourceAdmin(CachedModelAdmin):
             else:
                 obj.uri_path = '/'
         obj.save()
+
+    def get_list_display(self, request):
+        if request.user.is_superuser and 'all' in request.GET:
+            return self.list_display_superuser
+        else:
+            return self.list_display
 
     def get_readonly_fields(self, request, obj=None):
         if request.user.has_perm('warthog.admin_resource'):
