@@ -1,5 +1,7 @@
+from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.core.validators import RegexValidator
+from django.contrib.sites.models import Site
 from django.db import models
 from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _
@@ -37,6 +39,7 @@ class Template(models.Model):
     )
 
     # Description
+    site = models.ManyToManyField(Site)
     name = models.CharField(_('name'), max_length=100, db_index=True, unique=True)
     description = models.CharField(_('description'), max_length=250, blank=True,
         help_text=_("Optional description of template."))
@@ -63,6 +66,7 @@ class ResourceType(models.Model):
     """
     Defines a resource and what fields that are associated with it.
     """
+    site = models.ManyToManyField(Site)
     name = models.CharField(_('name'), max_length=50, unique=True)
     code = models.CharField(_('code'), max_length=50, unique=True, validators=[code_name],
         help_text=_('Code name used to reference this field.'))
@@ -186,6 +190,8 @@ class Resource(models.Model):
             "Lock this resource so only `Can admin resources` permission can edit"
             "this resource. This flag is used to prevent structural resources from being modified."
         ))
+    site = models.ManyToManyField(Site, default=settings.SITE_ID)
+
     # Details
     created = models.DateTimeField(_('creation date'), auto_now_add=True)
     updated = models.DateTimeField(_('last modified'), auto_now=True)
