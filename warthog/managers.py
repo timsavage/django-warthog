@@ -15,10 +15,6 @@ def generate_cache_key(instance_or_type, **vary_by):
 
 class CachingManager(models.Manager):
     """Manager that handles caching transparently."""
-    def __init__(self, use_for_related_fields=True):
-        self.use_for_related_fields = use_for_related_fields
-        super(CachingManager, self).__init__()
-
     def get_query_set(self):
         return CachingQuerySet(self.model)
 
@@ -90,6 +86,8 @@ class ResourceTypeManager(CachingManager):
 
 class ResourceManager(CachingManager):
     """Manager for dealing with resource models."""
+    use_for_related_fields = True
+
     def get_query_set(self):
         return super(ResourceManager, self).get_query_set().select_related('fields')
 

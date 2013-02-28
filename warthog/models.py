@@ -225,7 +225,7 @@ class Resource(models.Model):
 
     @property
     def children(self):
-        return self.resource_set.filter(deleted=False, published=True)
+        return self.resource_set.filter_front()
 
     @property
     def published_status(self):
