@@ -25,4 +25,8 @@ def get_resource_type(code, include_hidden=False):
 
 @register.assignment_tag(takes_context=True)
 def get_children(context, resource=None, include_hidden=False):
-    return ResourceIterator.for_children(resource or context.resource, include_hidden)
+    if isinstance(resource, int):
+        resource = get_resource(resource)
+    elif resource is None:
+        resource = context.resource
+    return ResourceIterator.for_children(resource, include_hidden)
