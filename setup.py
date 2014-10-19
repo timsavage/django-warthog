@@ -26,7 +26,7 @@ setup(
     name='django-warthog',
     version=warthog.__version__,
     description='Embeddable CMS for Django.',
-    long_description=open(path.join(path.dirname(__file__), 'README')).read(),
+    long_description=open(path.join(path.dirname(__file__), 'README.rst')).read(),
     #url='',
     license='BSD License',
     platforms=['OS Independent'],
