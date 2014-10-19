@@ -18,7 +18,7 @@ CLASSIFIERS += [
     'Topic :: Internet :: WWW/HTTP :: Dynamic Content',
     'Topic :: Software Development',
     'Topic :: Software Development :: Libraries :: Application Frameworks',
-    ]
+]
 
 setup(
     author="Tim Savage",
@@ -27,13 +27,13 @@ setup(
     version=warthog.__version__,
     description='Embeddable CMS for Django.',
     long_description=open(path.join(path.dirname(__file__), 'README.rst')).read(),
-    #url='',
+    url='https://www.github.com/timsavage/django-warthog',
     license='BSD License',
     platforms=['OS Independent'],
     classifiers=CLASSIFIERS,
     install_requires=[
         'Django>=1.4',
-        ],
+    ],
     packages=[
         'warthog',
         'warthog.admin',
@@ -41,7 +41,7 @@ setup(
         'warthog.templatetags',
         'warthog.resource_types',
         'warthog.tests',
-        ],
+    ],
     package_data={
         'warthog': [
             'static/admin/css/warthog.css',
