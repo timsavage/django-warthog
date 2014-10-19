@@ -17,3 +17,5 @@ MANIFEST
 *.egg-info
 .coverage
 docs/_build*
+.git
+

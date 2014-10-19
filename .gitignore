@@ -12,3 +12,5 @@ dist*
 .coverage
 docs/_build*
 .idea*
+.hg
+.hgtags
