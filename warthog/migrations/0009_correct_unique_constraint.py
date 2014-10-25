@@ -16,11 +16,6 @@ class Migration(SchemaMigration):
                       self.gf('django.db.models.fields.related.ForeignKey')(default=1, to=orm['sites.Site']),
                       keep_default=False)
 
-        # Adding field 'Resource.edit_lock'
-        db.add_column('warthog_resource', 'edit_lock',
-                      self.gf('django.db.models.fields.BooleanField')(default=False),
-                      keep_default=False)
-
         # Removing M2M table for field site on 'Resource'
         db.delete_table('warthog_resource_site')
 
@@ -34,9 +29,6 @@ class Migration(SchemaMigration):
 
         # Deleting field 'Resource.site'
         db.delete_column('warthog_resource', 'site_id')
-
-        # Deleting field 'Resource.edit_lock'
-        db.delete_column('warthog_resource', 'edit_lock')
 
         # Adding M2M table for field site on 'Resource'
         db.create_table('warthog_resource_site', (

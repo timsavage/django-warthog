@@ -44,6 +44,7 @@ class Migration(SchemaMigration):
             'Meta': {'ordering': "['order', 'uri_path', 'title']", 'unique_together': "(('slug', 'parent'),)", 'object_name': 'Resource'},
             'created': ('django.db.models.fields.DateTimeField', [], {'auto_now_add': 'True', 'blank': 'True'}),
             'deleted': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
+            'edit_lock': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
             'hide_from_menu': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'menu_class': ('django.db.models.fields.CharField', [], {'max_length': '50', 'blank': 'True'}),
