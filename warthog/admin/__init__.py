@@ -69,6 +69,7 @@ class ResourceTypeFieldInline(admin.TabularInline):
     model = ResourceTypeField
     extra = 1
 
+
 class ResourceTypeAdmin(admin.ModelAdmin):
     inlines = (ResourceTypeFieldInline, )
     list_display = ('name', 'description', 'child_types_list', 'created', 'updated', )
@@ -143,18 +144,19 @@ class ResourceAdmin(CachedModelAdmin):
             'fields': ('order', )
         }),
     ]
-    list_display = ('html_status', 'title', 'uri_path', 'html_type', 'published', 'publish_summary',
+    list_display = ('html_status', 'title', 'order', 'resource_path', 'html_type', 'published', 'publish_summary',
                     'unpublish_summary', 'html_actions', )
-    list_display_superuser = ('html_status', 'site', 'title', 'uri_path', 'html_type', 'published', 'publish_summary',
-                    'unpublish_summary', 'html_actions', )
-    list_display_links = ('title', 'uri_path', )
+    list_display_superuser = ('html_status', 'site', 'order', 'title', 'resource_path', 'html_type', 'published',
+                              'publish_summary', 'unpublish_summary', 'html_actions', )
+    list_editable = ('order', )
+    list_display_links = ('title', )
     list_filter = ('published', 'deleted', 'type', )
     actions = ('make_published', 'make_unpublished', 'clear_cache',)
     prepopulated_fields = {'slug': ('title', )}
     readonly_fields = ('created', 'updated', 'uri_path', 'edit_lock', 'site',)
     readonly_fields_superuser = ('created', 'updated', )
     save_on_top = True
-    save_as = True
+    save_as = False
 
     def html_status(self, obj):
         """HTML representation of the status (primarily for use in Admin)."""
@@ -163,6 +165,12 @@ class ResourceAdmin(CachedModelAdmin):
             code, unicode(help_text), unicode(name) + (', hidden' if obj.hide_from_menu else ''))
     html_status.short_description = _('status')
     html_status.allow_tags = True
+
+    def resource_path(self, obj):
+        """ Path to resource """
+        return '<a href="%s">%s</a>' % (obj.get_absolute_url(), obj.uri_path)
+    resource_path.short_description = _('Resource Path')
+    resource_path.allow_tags = True
 
     def html_actions(self, obj):
         """Actions within the list"""
@@ -279,7 +287,7 @@ class ResourceAdmin(CachedModelAdmin):
             return False
         return super(ResourceAdmin, self).has_delete_permission(request, obj)
 
-    @transaction.commit_on_success
+    @transaction.atomic
     def change_view(self, request, object_id, form_url='', extra_context=None):
         model = self.model
         opts = model._meta
@@ -335,6 +343,5 @@ class ResourceAdmin(CachedModelAdmin):
             'app_label': opts.app_label,
         }
         return self.render_change_form(request, context, change=True, obj=obj, form_url=form_url)
-
 
 admin.site.register(Resource, ResourceAdmin)
