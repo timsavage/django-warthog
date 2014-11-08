@@ -11,7 +11,7 @@ def get_resource(pk_or_path):
     Get a resource from it's ID or path.
     """
     try:
-        filters = dict(pk=pk_or_path)
+        filters = dict(pk=int(pk_or_path))
     except ValueError:
         # Assume is path
         filters = dict(uri_path=pk_or_path)
