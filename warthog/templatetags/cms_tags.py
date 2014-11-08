@@ -1,6 +1,6 @@
 from django import template
 from warthog.models import Resource, ResourceType
-from warthog.data_structures import ResourceIterator
+from warthog.data_structures import ResourceIterator, ResourceItem
 
 register = template.Library()
 
@@ -22,7 +22,7 @@ def get_resource(pk_or_path):
         return None
     else:
         if resource.is_live:
-            return resource
+            return ResourceItem(resource)
 
 
 @register.assignment_tag

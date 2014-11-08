@@ -1,6 +1,7 @@
 from models import Resource
 
-#TODO: A lot of opportunity here for caching
+# TODO: A lot of opportunity here for caching
+
 
 class ResourceItemFields(object):
     """
