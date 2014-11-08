@@ -6,10 +6,18 @@ register = template.Library()
 
 
 @register.assignment_tag
-def get_resource(pk):
-    """Get a resource from it's ID."""
+def get_resource(pk_or_path):
+    """
+    Get a resource from it's ID or path.
+    """
     try:
-        resource = Resource.objects.get_front(pk=pk)
+        filters = dict(pk=pk_or_path)
+    except ValueError:
+        # Assume is path
+        filters = dict(uri_path=pk_or_path)
+
+    try:
+        resource = Resource.objects.get_front(**filters)
     except Resource.DoesNotExist:
         return None
     else:
