@@ -8,12 +8,13 @@ register = template.Library()
 
 
 @register.simple_tag(takes_context=True)
-def inline_resource(context, pk_or_path, fallback_text='Resource `{}` not found'):
+def inline_resource(context, pk_or_path, not_found='Resource `{}` not found'):
     """
     Render a resource inline
 
     :param context: Current render context
     :param pk_or_path: An ID or path of resource to be rendered
+    :param not_found: Text to display if resource is not found.
     """
     try:
         request = context['request']
@@ -30,9 +31,9 @@ def inline_resource(context, pk_or_path, fallback_text='Resource `{}` not found'
     try:
         resource = Resource.objects.get_front(**filters)
     except Resource.DoesNotExist:
-        pass
+        return not_found.format(pk_or_path)
     else:
         if resource.can_serve(request.user):
             return render_resource(resource, request)
 
-    return fallback_text.format(pk_or_path)
+    return ''  # Return empty text if user permissions don't pass
