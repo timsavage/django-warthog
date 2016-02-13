@@ -1,3 +1,6 @@
+# -*- coding: utf-8 -*-
+
+
 class LazySettings(object):
     def _load_settings(self):
         from warthog import default_settings

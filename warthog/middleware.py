@@ -1,5 +1,7 @@
+# -*- coding: utf-8 -*-
+from __future__ import absolute_import
 from django.http import Http404
-from warthog.views import Cms
+from .views import Cms
 
 
 class CmsMiddleware(object):

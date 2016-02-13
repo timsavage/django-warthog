@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+from __future__ import absolute_import
 from django.conf import settings
 from django.contrib import admin
 from django.contrib.admin.util import unquote
@@ -10,9 +12,9 @@ from django.http import Http404
 from django.utils.encoding import force_unicode
 from django.utils.html import escape
 from django.utils.translation import ugettext_lazy as _
-from warthog import cache
-from warthog.models import Template, ResourceType, ResourceTypeField, Resource
-from warthog.admin.forms import ResourceFieldsForm, ResourceAddForm
+from .forms import ResourceFieldsForm, ResourceAddForm
+from .. import cache
+from ..models import Template, ResourceType, ResourceTypeField, Resource
 
 
 class CachedModelAdmin(admin.ModelAdmin):

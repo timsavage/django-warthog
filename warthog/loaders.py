@@ -1,6 +1,8 @@
+# -*- coding: utf-8 -*-
+from __future__ import absolute_import
 from django.template import TemplateDoesNotExist
 from django.template.loader import BaseLoader
-from warthog.models import Template
+from .models import Template
 
 
 class CmsTemplateLoader(BaseLoader):

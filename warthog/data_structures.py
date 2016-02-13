@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from models import Resource
 
 # TODO: A lot of opportunity here for caching

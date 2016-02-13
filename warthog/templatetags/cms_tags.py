@@ -1,6 +1,8 @@
+# -*- coding: utf-8 -*-
+from __future__ import absolute_import
 from django import template
-from warthog.models import Resource, ResourceType
-from warthog.data_structures import ResourceIterator, ResourceItem
+from ..models import Resource, ResourceType
+from ..data_structures import ResourceIterator, ResourceItem
 
 register = template.Library()
 

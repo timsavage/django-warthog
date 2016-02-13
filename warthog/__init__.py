@@ -1,2 +1,4 @@
-VERSION = (0, 4, 0, 'alpha')
+# -*- coding: utf-8 -*-
+
+VERSION = (0, 4, 1, 'beta')
 __version__ = '.'.join(map(str, VERSION))

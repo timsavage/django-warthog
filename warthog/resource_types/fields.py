@@ -1,8 +1,11 @@
+# -*- coding: utf-8 -*-
+from __future__ import absolute_import
 import datetime
 from django.contrib.admin import widgets as admin_widgets
 from django.core import validators
 from django.forms import fields
-from warthog.resource_types import uploads
+from ..resource_types import uploads
+
 # Attempt Tinymce for HTML widget
 try:
     from tinymce.widgets import AdminTinyMCE as AdminHtmlWidget

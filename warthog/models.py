@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+from __future__ import absolute_import
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.core.validators import RegexValidator
@@ -5,8 +7,8 @@ from django.contrib.sites.models import Site
 from django.db import models
 from django.utils import timezone
 from django.utils.translation import ugettext_lazy as t
-from warthog.managers import CachingManager, ResourceManager, ResourceTypeManager
-from warthog import resource_types
+from . import resource_types
+from .managers import CachingManager, ResourceManager, ResourceTypeManager
 
 
 code_name = RegexValidator(r'^[-\w]+$', message='Code value')
@@ -341,6 +343,25 @@ class Resource(models.Model):
         """Check if a particular user can edit this resource"""
         if self.edit_lock:
             return not user.has_perm('warthog.admin_resource')
+        return False
+
+    def can_serve(self, user, allow_superuser=True, permission='preview_resource'):
+        """Determine if this resource can be served.
+
+        :param user: User we are checking against.
+        :param allow_superuser: Allow superusers to view this resource.
+        :param permission: Permission required to view this resource.
+
+        """
+        if self.is_live:
+            return True
+
+        if allow_superuser and user.is_superuser:
+            return True
+
+        if permission and user.has_perm(permission):
+            return True
+
         return False
 
 

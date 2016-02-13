@@ -1,13 +1,11 @@
-# coding=utf-8
-from django.contrib.sites.models import get_current_site
+# -*- coding: utf-8 -*-
 from django.http import HttpResponse, Http404
 from django.shortcuts import get_object_or_404
-from django.template import loader
 from django.utils.log import getLogger
-from django.utils.safestring import mark_safe
 from django.views.generic import View
-from warthog.context import CmsRequestContext
-from warthog.models import Resource
+
+from .models import Resource
+from .render import render_resource
 
 
 logger = getLogger('warthog.views')
@@ -47,45 +45,27 @@ class Cms(View):
         except Resource.DoesNotExist:
             raise Http404
 
-    def can_serve(self, resource):
-        """Determine if this resource can be served."""
-        if resource.is_live:
-            return True
-
-        user = self.request.user
-        if getattr(self, 'superuser_view_all', True) and user.is_superuser:
-            return True
-
-        permission = getattr(self, 'permission', 'preview_resource')
-        if permission and user.has_perm(permission):
-            return True
-
-        return False
-
-    def render(self, resource):
-        """Handle rendering of the resource."""
-
-        # Build up rendering context
-        params = {r.code: mark_safe(r.value) for r in resource.fields.all()}
-        params['title'] = resource.title
-
-        context = CmsRequestContext(self.site, self.request, resource, params)
-
-        template = loader.select_template([
-            "%s/%s" % (self.site.domain, resource.type.default_template),
-            resource.type.default_template
-        ])
-        return HttpResponse(template.render(context))
+    @property
+    def can_serve_flags(self):
+        try:
+            return self._can_serve_flags
+        except AttributeError:
+            flags = {}
+            if hasattr(self, 'superuser_view_all'):
+                flags['allow_superuser'] = getattr(self, 'superuser_view_all')
+            if hasattr(self, 'permission'):
+                flags['permission'] = getattr(self, 'permission')
+            self._can_serve_flags = flags
+            return flags
 
     def get(self, request, *args, **kwargs):
         """Respond to ``get`` HTTP method."""
-        self.site = get_current_site(request)
         resource = self.load_resource(*args, **kwargs)
 
-        if not self.can_serve(resource):
+        if not resource.can_serve(request.user, **self.can_serve_flags):
             raise Http404
 
-        return self.render(resource)
+        return HttpResponse(render_resource(resource, request))
 
 
 class CmsPreview(Cms):

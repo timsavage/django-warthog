@@ -1,6 +1,8 @@
+# -*- coding: utf-8 -*-
+from __future__ import absolute_import
 from django import forms
-from warthog.models import Resource
-from warthog.resource_types import library, uploads
+from ..models import Resource
+from ..resource_types import library
 
 
 class ResourceFieldsForm(forms.Form):
