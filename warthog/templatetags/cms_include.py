@@ -13,10 +13,10 @@ def render_resource(context, pk_or_path):
     Render a resource inline
     """
     try:
-        request = context.request
-    except AttributeError:
-        raise AttributeError('The request object is required to be part of the context. '
-                             'Add "django.core.context_processors.request" to your TEMPLATE_CONTEXT_PROCESSORS setting')
+        request = context['request']
+    except KeyError:
+        raise KeyError('The request object is required to be part of the context. '
+                       'Add "django.core.context_processors.request" to your TEMPLATE_CONTEXT_PROCESSORS setting')
 
     try:
         filters = dict(pk=int(pk_or_path))
