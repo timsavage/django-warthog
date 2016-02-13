@@ -11,7 +11,8 @@ def generate_obj_key(instance_or_type, **vary_by):
 
 
 def set_model(model_instance, cache=None):
-    """Store a model in cache.
+    """
+    Store a model in cache.
     
     :param model_instance: the model object to store.
     :param cache: cache instance to use; defaults to main django cache.
@@ -37,6 +38,7 @@ def get_model(model_type, pk, cache=None):
     key = generate_obj_key(model_type, pk=pk)
     return cache.get(key)
 
+
 def clear_model(model_instance, cache=None):
     """Clear a model instance from cache.
 
@@ -58,8 +60,8 @@ def set_model_by_attribute(model_instance, attr_name, cache=None):
     :returns: reference cache key.
     
     .. note::
-	    Attribute must be unique.
-	
+        Attribute must be unique.
+
     """
     cache = cache or default_cache
     # TODO: Add check for uniqueness (use unique flag)
