@@ -27,7 +27,9 @@ def render_resource(context, pk_or_path):
     try:
         resource = Resource.objects.get_front(**filters)
     except Resource.DoesNotExist:
-        return None
+        pass
     else:
         if resource.can_serve(request.user):
             return render_resource(resource, request)
+
+    return ''
