@@ -8,9 +8,12 @@ register = template.Library()
 
 
 @register.simple_tag(takes_context=True)
-def render_resource(context, pk_or_path):
+def inline_resource(context, pk_or_path, fallback_text='Resource `{}` not found'):
     """
     Render a resource inline
+
+    :param context: Current render context
+    :param pk_or_path: An ID or path of resource to be rendered
     """
     try:
         request = context['request']
@@ -32,4 +35,4 @@ def render_resource(context, pk_or_path):
         if resource.can_serve(request.user):
             return render_resource(resource, request)
 
-    return ''
+    return fallback_text.format(pk_or_path)
