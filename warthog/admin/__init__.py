@@ -5,10 +5,7 @@ from django.contrib import admin
 from django.core.exceptions import PermissionDenied
 from django.core.urlresolvers import reverse
 from django.db import transaction
-try:  # This was changed from django 1.6
-    from django.forms.utils import ErrorList
-except ImportError:
-    from django.forms.util import ErrorList
+from django.forms.utils import ErrorList
 from django.contrib.admin import helpers
 from django.http import Http404
 from django.utils.encoding import force_unicode

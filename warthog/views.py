@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
+from logging import getLogger
 from django.http import HttpResponse, Http404
 from django.shortcuts import get_object_or_404
-from django.utils.log import getLogger
 from django.views.generic import View
 
 from .models import Resource
