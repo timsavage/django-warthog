@@ -5,7 +5,7 @@ from django.contrib import admin
 from django.core.exceptions import PermissionDenied
 from django.core.urlresolvers import reverse
 from django.db import transaction
-from django.forms.util import ErrorList
+from django.forms.utils import ErrorList
 from django.contrib.admin import helpers
 from django.http import Http404
 from django.utils.encoding import force_unicode
