@@ -37,7 +37,7 @@ setup(
     packages=[
         'warthog',
         'warthog.admin',
-        'warthog.migrations',
+        'warthog.migrations_south',
         'warthog.templatetags',
         'warthog.resource_types',
         'warthog.tests',
