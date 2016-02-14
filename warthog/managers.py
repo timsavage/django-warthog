@@ -8,8 +8,8 @@ from django.core.cache import cache
 def generate_cache_key(instance_or_type, **vary_by):
     """Generate a cache key for a model object."""
     opts = instance_or_type._meta
-    return 'model:%s.%s[%s]' % (
-        opts.app_label, opts.module_name,
+    return 'model:{}[{}]'.format(
+        opts.label_lower,
         ','.join(['%s=%s' % v for v in vary_by.iteritems()])
     )
 
