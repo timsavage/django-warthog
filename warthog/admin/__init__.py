@@ -2,7 +2,6 @@
 from __future__ import absolute_import
 from django.conf import settings
 from django.contrib import admin
-from django.contrib.admin.util import unquote
 from django.core.exceptions import PermissionDenied
 from django.core.urlresolvers import reverse
 from django.db import transaction
@@ -12,6 +11,8 @@ from django.http import Http404
 from django.utils.encoding import force_unicode
 from django.utils.html import escape
 from django.utils.translation import ugettext_lazy as _
+from urlparse import unquote
+
 from .forms import ResourceFieldsForm, ResourceAddForm
 from .. import cache
 from ..models import Template, ResourceType, ResourceTypeField, Resource
@@ -267,7 +268,7 @@ class ResourceAdmin(CachedModelAdmin):
             return qs
         return qs.filter(site=settings.SITE_ID)
 
-    def response_add(self, request, obj, post_url_continue='../%s/'):
+    def response_add(self, request, obj, post_url_continue=None):
         if '_addanother' not in request.POST and '_popup' not in request.POST:
             request.POST['_continue'] = 1
         return super(ResourceAdmin, self).response_add(request, obj, post_url_continue)
