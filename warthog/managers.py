@@ -82,7 +82,7 @@ class CachingQuerySet(QuerySet):
 class ResourceTypeManager(CachingManager):
     """Manager for resource type objects"""
     def get_queryset(self):
-        return super(ResourceTypeManager, self).get_query_set().select_related('fields')
+        return super(ResourceTypeManager, self).get_queryset().select_related('fields')
 
 
 class ResourceManager(CachingManager):
@@ -90,7 +90,7 @@ class ResourceManager(CachingManager):
     use_for_related_fields = True
 
     def get_queryset(self):
-        return super(ResourceManager, self).get_query_set().select_related('fields')
+        return super(ResourceManager, self).get_queryset().select_related('fields')
 
     def get_front(self, **filters):
         """

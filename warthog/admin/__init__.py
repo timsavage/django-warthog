@@ -55,12 +55,12 @@ class TemplateAdmin(admin.ModelAdmin):
     save_on_top = True
     save_as = True
 
-    def queryset(self, request):
+    def get_queryset(self, request):
         """
         Returns a QuerySet of all model instances that can be edited by the
         admin site. This is used by changelist_view.
         """
-        qs = super(TemplateAdmin, self).queryset(request)
+        qs = super(TemplateAdmin, self).get_queryset(request)
         if request.user.is_superuser and 'all' in request.GET:
             return qs
         return qs.filter(site=settings.SITE_ID)
@@ -97,12 +97,12 @@ class ResourceTypeAdmin(admin.ModelAdmin):
         else:
             return self.list_display
 
-    def queryset(self, request):
+    def get_queryset(self, request):
         """
         Returns a QuerySet of all model instances that can be edited by the
         admin site. This is used by changelist_view.
         """
-        qs = super(ResourceTypeAdmin, self).queryset(request)
+        qs = super(ResourceTypeAdmin, self).get_queryset(request)
         if request.user.is_superuser:
             return qs
         return qs.filter(site=settings.SITE_ID)
@@ -258,12 +258,12 @@ class ResourceAdmin(CachedModelAdmin):
             return ResourceAddForm
         return super(ResourceAdmin, self).get_form(request, obj, **kwargs)
 
-    def queryset(self, request):
+    def get_queryset(self, request):
         """
         Returns a QuerySet of all model instances that can be edited by the
         admin site. This is used by changelist_view.
         """
-        qs = super(ResourceAdmin, self).queryset(request)
+        qs = super(ResourceAdmin, self).get_queryset(request)
         if request.user.is_superuser and 'all' in request.GET:
             return qs
         return qs.filter(site=settings.SITE_ID)
