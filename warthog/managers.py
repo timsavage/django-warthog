@@ -9,14 +9,14 @@ def generate_cache_key(instance_or_type, **vary_by):
     """Generate a cache key for a model object."""
     opts = instance_or_type._meta
     return 'model:{}[{}]'.format(
-        opts.label_lower,
+        opts.db_table,
         ','.join(['%s=%s' % v for v in vary_by.iteritems()])
     )
 
 
 class CachingManager(models.Manager):
     """Manager that handles caching transparently."""
-    def get_query_set(self):
+    def get_queryset(self):
         return CachingQuerySet(self.model)
 
     def contribute_to_class(self, model, name):
