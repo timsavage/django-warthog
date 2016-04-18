@@ -1,8 +1,12 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import
 from django.template import TemplateDoesNotExist
-from django.template.loader import BaseLoader
 from .models import Template
+
+try:
+    from django.template.loaders.base import Loader as BaseLoader
+except ImportError:
+    from django.template.loader import BaseLoader
 
 
 class CmsTemplateLoader(BaseLoader):
