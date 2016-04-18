@@ -22,7 +22,7 @@ CLASSIFIERS += [
 
 setup(
     author="Tim Savage",
-    author_email="tim.savage@poweredbypenguins.org",
+    author_email="tim@savage.company",
     name='django-warthog',
     version=warthog.__version__,
     description='Embeddable CMS for Django.',
