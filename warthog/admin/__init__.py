@@ -115,6 +115,7 @@ class ResourceErrorList(ErrorList):
     Stores all errors for the form/formsets in an add/change stage view.
     """
     def __init__(self, form, fields_form):
+        super(ResourceErrorList, self).__init__()
         if form.is_bound:
             self.extend(form.errors.values())
         if fields_form.is_bound:
